@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, ActivityIndicator } from 'react-native';
-import Icon from 'react-native-vector-icons/MaterialIcons';
+import { FontAwesomeIcon } from '@fortawesome/react-native-fontawesome';
+import { faMicrophone, faStop } from '@fortawesome/free-solid-svg-icons';
 import { useAudio } from '../hooks/useAudio';
 
 interface AudioRecorderProps {
@@ -48,8 +49,8 @@ const AudioRecorder: React.FC<AudioRecorderProps> = ({ onRecordingComplete }) =>
               { backgroundColor: isRecording ? '#FF3B30' : '#007AFF' }
             ]}
           >
-            <Icon
-              name={isRecording ? 'stop' : 'mic'}
+            <FontAwesomeIcon
+              icon={isRecording ? faStop : faMicrophone}
               size={32}
               color="#FFFFFF"
             />
