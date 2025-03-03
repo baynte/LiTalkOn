@@ -1,0 +1,219 @@
+{
+  "voiceClips": [
+    {
+      "id": "1",
+      "title": "English Pronunciation Exercise",
+      "description": "Practice your English pronunciation with this short sentence: \"The quick brown fox jumps over the lazy dog.\"",
+      "audioUrl": "https://api.litalkon.com/audio/english-pronunciation.mp3",
+      "category": "english",
+      "difficulty": "beginner",
+      "createdAt": "2023-03-01T10:00:00Z",
+      "duration": 5.2,
+      "transcript": "The quick brown fox jumps over the lazy dog.",
+      "tips": "Focus on the 'th' sound in 'the' and the 'x' sound in 'fox'."
+    },
+    {
+      "id": "2",
+      "title": "French Accent Training",
+      "description": "Improve your French accent with this phrase: \"Je voudrais une tasse de café, s'il vous plaît.\"",
+      "audioUrl": "https://api.litalkon.com/audio/french-accent.mp3",
+      "category": "french",
+      "difficulty": "intermediate",
+      "createdAt": "2023-03-02T14:30:00Z",
+      "duration": 3.8,
+      "transcript": "Je voudrais une tasse de café, s'il vous plaît.",
+      "tips": "Pay attention to the 'r' sound in 'voudrais' and the nasal sounds in 'une'."
+    },
+    {
+      "id": "3",
+      "title": "Spanish Pronunciation Guide",
+      "description": "Learn to pronounce this Spanish sentence correctly: \"¿Dónde está la biblioteca?\"",
+      "audioUrl": "https://api.litalkon.com/audio/spanish-pronunciation.mp3",
+      "category": "spanish",
+      "difficulty": "beginner",
+      "createdAt": "2023-03-03T09:15:00Z",
+      "duration": 2.5,
+      "transcript": "¿Dónde está la biblioteca?",
+      "tips": "Roll the 'r' in 'Dónde' and emphasize the accent on 'está'."
+    },
+    {
+      "id": "4",
+      "title": "Japanese Greeting Practice",
+      "description": "Practice this common Japanese greeting: \"こんにちは、お元気ですか？\" (Konnichiwa, o-genki desu ka?)",
+      "audioUrl": "https://api.litalkon.com/audio/japanese-greeting.mp3",
+      "category": "japanese",
+      "difficulty": "beginner",
+      "createdAt": "2023-03-04T16:45:00Z",
+      "duration": 4.0,
+      "transcript": "こんにちは、お元気ですか？",
+      "tips": "Keep a steady rhythm and slightly rise in pitch at the end of the question."
+    },
+    {
+      "id": "5",
+      "title": "German Pronunciation Challenge",
+      "description": "Try this challenging German phrase: \"Ich möchte Deutsch lernen, weil es eine interessante Sprache ist.\"",
+      "audioUrl": "https://api.litalkon.com/audio/german-pronunciation.mp3",
+      "category": "german",
+      "difficulty": "intermediate",
+      "createdAt": "2023-03-05T11:20:00Z",
+      "duration": 6.3,
+      "transcript": "Ich möchte Deutsch lernen, weil es eine interessante Sprache ist.",
+      "tips": "Focus on the 'ch' sound in 'ich' and 'möchte', and the 'r' sound in 'lernen'."
+    },
+    {
+      "id": "6",
+      "title": "Italian Pronunciation Basics",
+      "description": "Practice this Italian phrase: \"Buongiorno, come stai oggi?\"",
+      "audioUrl": "https://api.litalkon.com/audio/italian-basics.mp3",
+      "category": "italian",
+      "difficulty": "beginner",
+      "createdAt": "2023-03-06T13:10:00Z",
+      "duration": 3.2,
+      "transcript": "Buongiorno, come stai oggi?",
+      "tips": "Roll the 'r' in 'Buongiorno' and emphasize the double consonant 'gg'."
+    },
+    {
+      "id": "7",
+      "title": "Mandarin Chinese Tones",
+      "description": "Practice the four tones in Mandarin with this phrase: \"你好，我叫李明。\" (Nǐ hǎo, wǒ jiào Lǐ Míng.)",
+      "audioUrl": "https://api.litalkon.com/audio/mandarin-tones.mp3",
+      "category": "mandarin",
+      "difficulty": "intermediate",
+      "createdAt": "2023-03-07T09:45:00Z",
+      "duration": 4.5,
+      "transcript": "你好，我叫李明。",
+      "tips": "Pay close attention to the third tone in '你' (nǐ) and '好' (hǎo)."
+    },
+    {
+      "id": "8",
+      "title": "Russian Vowel Sounds",
+      "description": "Practice Russian vowel sounds with this phrase: \"Здравствуйте, как дела?\" (Zdravstvuyte, kak dela?)",
+      "audioUrl": "https://api.litalkon.com/audio/russian-vowels.mp3",
+      "category": "russian",
+      "difficulty": "advanced",
+      "createdAt": "2023-03-08T14:20:00Z",
+      "duration": 5.0,
+      "transcript": "Здравствуйте, как дела?",
+      "tips": "Focus on the consonant cluster in 'Здравствуйте' and the unstressed 'o' in 'как'."
+    },
+    {
+      "id": "9",
+      "title": "Korean Greeting Practice",
+      "description": "Learn this basic Korean greeting: \"안녕하세요, 만나서 반갑습니다.\" (Annyeonghaseyo, mannaseo bangapseumnida.)",
+      "audioUrl": "https://api.litalkon.com/audio/korean-greeting.mp3",
+      "category": "korean",
+      "difficulty": "beginner",
+      "createdAt": "2023-03-09T10:30:00Z",
+      "duration": 5.8,
+      "transcript": "안녕하세요, 만나서 반갑습니다.",
+      "tips": "Keep a rhythmic pattern and pay attention to the pitch changes."
+    },
+    {
+      "id": "10",
+      "title": "Arabic Pronunciation Basics",
+      "description": "Practice these basic Arabic sounds: \"مرحبا، كيف حالك؟\" (Marhaban, kayfa haluk?)",
+      "audioUrl": "https://api.litalkon.com/audio/arabic-basics.mp3",
+      "category": "arabic",
+      "difficulty": "intermediate",
+      "createdAt": "2023-03-10T15:45:00Z",
+      "duration": 4.2,
+      "transcript": "مرحبا، كيف حالك؟",
+      "tips": "Focus on the guttural 'h' sound in 'مرحبا' (Marhaban) and the 'k' sound in 'حالك' (haluk)."
+    }
+  ],
+  "analysisResults": [
+    {
+      "id": "analysis-1",
+      "originalClipId": "1",
+      "userClipId": "user-recording-123",
+      "userId": "user-456",
+      "similarityScore": 0.78,
+      "feedback": "Good attempt! Your pronunciation is clear, but you could improve the rhythm and intonation of the sentence.",
+      "createdAt": "2023-03-10T15:30:00Z",
+      "analysisDetails": {
+        "pitch": {
+          "score": 0.82,
+          "feedback": "Your pitch variation is good, but try to emphasize the rising intonation at the end of questions."
+        },
+        "rhythm": {
+          "score": 0.75,
+          "feedback": "The rhythm is slightly off. Try to maintain a more consistent pace throughout the sentence."
+        },
+        "pronunciation": {
+          "score": 0.85,
+          "feedback": "Your pronunciation of individual words is very good. Pay attention to the 'th' sound in 'the'."
+        }
+      }
+    },
+    {
+      "id": "analysis-2",
+      "originalClipId": "2",
+      "userClipId": "user-recording-124",
+      "userId": "user-456",
+      "similarityScore": 0.65,
+      "feedback": "Your French accent needs some work. Focus on the nasal sounds and the 'r' pronunciation.",
+      "createdAt": "2023-03-09T12:45:00Z",
+      "analysisDetails": {
+        "pitch": {
+          "score": 0.70,
+          "feedback": "Your intonation pattern is different from the native speaker. French has a rising pattern at the end of phrases."
+        },
+        "rhythm": {
+          "score": 0.68,
+          "feedback": "The rhythm is choppy. Try to connect words more smoothly in French."
+        },
+        "pronunciation": {
+          "score": 0.60,
+          "feedback": "The 'r' sound in 'voudrais' needs improvement. It should be more guttural."
+        }
+      }
+    },
+    {
+      "id": "analysis-3",
+      "originalClipId": "3",
+      "userClipId": "user-recording-125",
+      "userId": "user-789",
+      "similarityScore": 0.82,
+      "feedback": "Excellent Spanish pronunciation! Your accent is very natural.",
+      "createdAt": "2023-03-08T09:15:00Z",
+      "analysisDetails": {
+        "pitch": {
+          "score": 0.85,
+          "feedback": "Your question intonation is excellent, with the appropriate rise at the end."
+        },
+        "rhythm": {
+          "score": 0.80,
+          "feedback": "Good rhythm, but you could speed up slightly to match a native speaker."
+        },
+        "pronunciation": {
+          "score": 0.90,
+          "feedback": "Your rolled 'r' in 'Dónde' is very good. Keep practicing to make it even more consistent."
+        }
+      }
+    }
+  ],
+  "users": [
+    {
+      "id": "user-456",
+      "email": "john.doe@example.com",
+      "name": "John Doe",
+      "createdAt": "2023-02-15T10:30:00Z",
+      "preferences": {
+        "language": "en",
+        "difficulty": "intermediate",
+        "categories": ["english", "french", "spanish"]
+      }
+    },
+    {
+      "id": "user-789",
+      "email": "jane.smith@example.com",
+      "name": "Jane Smith",
+      "createdAt": "2023-02-20T14:45:00Z",
+      "preferences": {
+        "language": "en",
+        "difficulty": "beginner",
+        "categories": ["spanish", "italian"]
+      }
+    }
+  ]
+} 
