@@ -14,6 +14,7 @@ import AudioPlayer from './AudioPlayer';
 import AudioRecorder from './AudioRecorder';
 import { analyzeVoiceComparison } from '../services/api';
 import { createFileObject } from '../utils/audioUtils';
+import { useTheme } from '../theme/ThemeProvider';
 
 interface VoiceAnalysisModalProps {
   visible: boolean;
@@ -26,6 +27,9 @@ const VoiceAnalysisModal: React.FC<VoiceAnalysisModalProps> = ({
   voiceClip,
   onClose,
 }) => {
+  const theme = useTheme();
+  const { colors, borderRadius, shadows } = theme;
+
   const [userRecordingUri, setUserRecordingUri] = useState<string | null>(null);
   const [analysisResult, setAnalysisResult] = useState<VoiceAnalysisResult | null>(null);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
@@ -62,54 +66,54 @@ const VoiceAnalysisModal: React.FC<VoiceAnalysisModalProps> = ({
 
     return (
       <View style={styles.analysisContainer}>
-        <Text style={styles.analysisTitle}>Analysis Result</Text>
+        <Text style={[styles.analysisTitle, { color: colors.text }]}>Analysis Result</Text>
         
-        <View style={styles.scoreContainer}>
-          <Text style={styles.scoreLabel}>Overall Similarity:</Text>
-          <Text style={styles.scoreValue}>
+        <View style={[styles.scoreContainer, { backgroundColor: colors.primaryLight + '20' }]}>
+          <Text style={[styles.scoreLabel, { color: colors.text }]}>Overall Similarity:</Text>
+          <Text style={[styles.scoreValue, { color: colors.primary }]}>
             {analysisResult.similarityScore ? `${Math.round(analysisResult.similarityScore * 100)}%` : 'N/A'}
           </Text>
         </View>
 
         {analysisResult.feedback && (
-          <Text style={styles.feedback}>{analysisResult.feedback}</Text>
+          <Text style={[styles.feedback, { color: colors.textSecondary }]}>{analysisResult.feedback}</Text>
         )}
 
         {analysisResult.analysisDetails && (
           <View style={styles.detailsContainer}>
-            <Text style={styles.detailsTitle}>Detailed Analysis:</Text>
+            <Text style={[styles.detailsTitle, { color: colors.text }]}>Detailed Analysis:</Text>
             
             {analysisResult.analysisDetails.pitch && (
-              <View style={styles.detailItem}>
-                <Text style={styles.detailLabel}>Pitch:</Text>
-                <Text style={styles.detailScore}>
+              <View style={[styles.detailItem, { borderColor: colors.divider }]}>
+                <Text style={[styles.detailLabel, { color: colors.text }]}>Pitch:</Text>
+                <Text style={[styles.detailScore, { color: colors.primary }]}>
                   {Math.round(analysisResult.analysisDetails.pitch.score * 100)}%
                 </Text>
-                <Text style={styles.detailFeedback}>
+                <Text style={[styles.detailFeedback, { color: colors.textSecondary }]}>
                   {analysisResult.analysisDetails.pitch.feedback}
                 </Text>
               </View>
             )}
             
             {analysisResult.analysisDetails.rhythm && (
-              <View style={styles.detailItem}>
-                <Text style={styles.detailLabel}>Rhythm:</Text>
-                <Text style={styles.detailScore}>
+              <View style={[styles.detailItem, { borderColor: colors.divider }]}>
+                <Text style={[styles.detailLabel, { color: colors.text }]}>Rhythm:</Text>
+                <Text style={[styles.detailScore, { color: colors.primary }]}>
                   {Math.round(analysisResult.analysisDetails.rhythm.score * 100)}%
                 </Text>
-                <Text style={styles.detailFeedback}>
+                <Text style={[styles.detailFeedback, { color: colors.textSecondary }]}>
                   {analysisResult.analysisDetails.rhythm.feedback}
                 </Text>
               </View>
             )}
             
             {analysisResult.analysisDetails.pronunciation && (
-              <View style={styles.detailItem}>
-                <Text style={styles.detailLabel}>Pronunciation:</Text>
-                <Text style={styles.detailScore}>
+              <View style={[styles.detailItem, { borderColor: colors.divider }]}>
+                <Text style={[styles.detailLabel, { color: colors.text }]}>Pronunciation:</Text>
+                <Text style={[styles.detailScore, { color: colors.primary }]}>
                   {Math.round(analysisResult.analysisDetails.pronunciation.score * 100)}%
                 </Text>
-                <Text style={styles.detailFeedback}>
+                <Text style={[styles.detailFeedback, { color: colors.textSecondary }]}>
                   {analysisResult.analysisDetails.pronunciation.feedback}
                 </Text>
               </View>
@@ -130,48 +134,55 @@ const VoiceAnalysisModal: React.FC<VoiceAnalysisModalProps> = ({
       onRequestClose={onClose}
     >
       <View style={styles.modalOverlay}>
-        <View style={styles.modalContent}>
-          <View style={styles.header}>
-            <Text style={styles.title}>{voiceClip.title}</Text>
+        <View style={[
+          styles.modalContent, 
+          { 
+            backgroundColor: colors.surface,
+            borderRadius: borderRadius.lg,
+            ...shadows.medium
+          }
+        ]}>
+          <View style={[styles.header, { borderBottomColor: colors.divider }]}>
+            <Text style={[styles.title, { color: colors.text }]}>{voiceClip.title}</Text>
             <TouchableOpacity onPress={onClose} style={styles.closeButton}>
-              <Icon name="close" size={24} color="#333" />
+              <Icon name="close" size={24} color={colors.icon} />
             </TouchableOpacity>
           </View>
 
           <ScrollView style={styles.scrollContent}>
-            <Text style={styles.description}>{voiceClip.description}</Text>
+            <Text style={[styles.description, { color: colors.textSecondary }]}>{voiceClip.description}</Text>
             
             <View style={styles.section}>
-              <Text style={styles.sectionTitle}>Original Voice Clip</Text>
+              <Text style={[styles.sectionTitle, { color: colors.text }]}>Original Voice Clip</Text>
               <AudioPlayer audioUrl={voiceClip.audioUrl} />
             </View>
             
             <View style={styles.section}>
-              <Text style={styles.sectionTitle}>Record Your Voice</Text>
+              <Text style={[styles.sectionTitle, { color: colors.text }]}>Record Your Voice</Text>
               <AudioRecorder onRecordingComplete={handleRecordingComplete} />
             </View>
             
             {userRecordingUri && (
               <View style={styles.section}>
-                <Text style={styles.sectionTitle}>Your Recording</Text>
+                <Text style={[styles.sectionTitle, { color: colors.text }]}>Your Recording</Text>
                 <AudioPlayer audioUrl={userRecordingUri} />
                 
                 <TouchableOpacity
-                  style={styles.analyzeButton}
+                  style={[styles.analyzeButton, { backgroundColor: colors.primary }]}
                   onPress={handleAnalyzeVoice}
                   disabled={isAnalyzing}
                 >
                   {isAnalyzing ? (
-                    <ActivityIndicator size="small" color="#FFFFFF" />
+                    <ActivityIndicator size="small" color={colors.textOnPrimary} />
                   ) : (
-                    <Text style={styles.analyzeButtonText}>Analyze Voice</Text>
+                    <Text style={[styles.analyzeButtonText, { color: colors.textOnPrimary }]}>Analyze Voice</Text>
                   )}
                 </TouchableOpacity>
               </View>
             )}
             
             {error && (
-              <Text style={styles.errorText}>{error}</Text>
+              <Text style={[styles.errorText, { color: colors.error }]}>{error}</Text>
             )}
             
             {renderAnalysisResult()}
@@ -192,8 +203,6 @@ const styles = StyleSheet.create({
   modalContent: {
     width: '90%',
     maxHeight: '80%',
-    backgroundColor: '#FFFFFF',
-    borderRadius: 12,
     overflow: 'hidden',
   },
   header: {
@@ -202,12 +211,10 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     padding: 16,
     borderBottomWidth: 1,
-    borderBottomColor: '#EEEEEE',
   },
   title: {
     fontSize: 20,
     fontWeight: '600',
-    color: '#333',
     flex: 1,
   },
   closeButton: {
@@ -218,7 +225,6 @@ const styles = StyleSheet.create({
   },
   description: {
     fontSize: 16,
-    color: '#666',
     marginBottom: 16,
     lineHeight: 22,
   },
@@ -228,11 +234,9 @@ const styles = StyleSheet.create({
   sectionTitle: {
     fontSize: 18,
     fontWeight: '600',
-    color: '#333',
     marginBottom: 8,
   },
   analyzeButton: {
-    backgroundColor: '#007AFF',
     paddingVertical: 12,
     paddingHorizontal: 24,
     borderRadius: 8,
@@ -240,82 +244,67 @@ const styles = StyleSheet.create({
     marginTop: 16,
   },
   analyzeButtonText: {
-    color: '#FFFFFF',
     fontSize: 16,
     fontWeight: '600',
   },
   errorText: {
-    color: '#FF3B30',
     fontSize: 14,
     marginBottom: 16,
-    textAlign: 'center',
   },
   analysisContainer: {
-    backgroundColor: '#F8F8F8',
-    padding: 16,
-    borderRadius: 8,
-    marginTop: 16,
+    marginTop: 8,
     marginBottom: 24,
   },
   analysisTitle: {
-    fontSize: 18,
+    fontSize: 20,
     fontWeight: '600',
-    color: '#333',
     marginBottom: 16,
   },
   scoreContainer: {
     flexDirection: 'row',
-    alignItems: 'center',
     justifyContent: 'space-between',
+    alignItems: 'center',
+    padding: 16,
+    borderRadius: 8,
     marginBottom: 16,
   },
   scoreLabel: {
     fontSize: 16,
-    color: '#333',
+    fontWeight: '500',
   },
   scoreValue: {
     fontSize: 24,
     fontWeight: '700',
-    color: '#007AFF',
   },
   feedback: {
-    fontSize: 14,
-    color: '#666',
+    fontSize: 16,
+    lineHeight: 22,
     marginBottom: 16,
-    lineHeight: 20,
   },
   detailsContainer: {
     marginTop: 8,
   },
   detailsTitle: {
-    fontSize: 16,
+    fontSize: 18,
     fontWeight: '600',
-    color: '#333',
-    marginBottom: 8,
+    marginBottom: 12,
   },
   detailItem: {
-    marginBottom: 12,
-    padding: 12,
-    backgroundColor: '#FFFFFF',
-    borderRadius: 8,
-    borderLeftWidth: 4,
-    borderLeftColor: '#007AFF',
+    borderBottomWidth: 1,
+    paddingVertical: 12,
   },
   detailLabel: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: '#333',
+    fontSize: 16,
+    fontWeight: '500',
     marginBottom: 4,
   },
   detailScore: {
     fontSize: 18,
     fontWeight: '700',
-    color: '#007AFF',
     marginBottom: 4,
   },
   detailFeedback: {
     fontSize: 14,
-    color: '#666',
     lineHeight: 20,
   },
 });

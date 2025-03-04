@@ -13,8 +13,12 @@ import { VoiceClip } from '../types';
 import VoiceClipItem from '../components/VoiceClipItem';
 import VoiceAnalysisModal from '../components/VoiceAnalysisModal';
 import { fetchVoiceClips } from '../services/api';
+import { useTheme } from '../theme/ThemeProvider';
 
 const VoiceClipListScreen: React.FC = () => {
+  const theme = useTheme();
+  const { colors } = theme;
+  
   const [voiceClips, setVoiceClips] = useState<VoiceClip[]>([]);
   const [selectedVoiceClip, setSelectedVoiceClip] = useState<VoiceClip | null>(null);
   const [isModalVisible, setIsModalVisible] = useState(false);
@@ -60,8 +64,8 @@ const VoiceClipListScreen: React.FC = () => {
     if (isLoading) {
       return (
         <View style={styles.emptyContainer}>
-          <ActivityIndicator size="large" color="#007AFF" />
-          <Text style={styles.emptyText}>Loading voice clips...</Text>
+          <ActivityIndicator size="large" color={colors.primary} />
+          <Text style={[styles.emptyText, { color: colors.textSecondary }]}>Loading voice clips...</Text>
         </View>
       );
     }
@@ -69,24 +73,24 @@ const VoiceClipListScreen: React.FC = () => {
     if (error) {
       return (
         <View style={styles.emptyContainer}>
-          <Text style={styles.errorText}>{error}</Text>
+          <Text style={[styles.errorText, { color: colors.error }]}>{error}</Text>
         </View>
       );
     }
 
     return (
       <View style={styles.emptyContainer}>
-        <Text style={styles.emptyText}>No voice clips available</Text>
+        <Text style={[styles.emptyText, { color: colors.textSecondary }]}>No voice clips available</Text>
       </View>
     );
   };
 
   return (
-    <SafeAreaView style={styles.container}>
-      <StatusBar barStyle="dark-content" backgroundColor="#FFFFFF" />
+    <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
+      <StatusBar barStyle="dark-content" backgroundColor={colors.surface} />
       
-      <View style={styles.header}>
-        <Text style={styles.title}>Voice Analysis</Text>
+      <View style={[styles.header, { backgroundColor: colors.surface, borderBottomColor: colors.divider }]}>
+        <Text style={[styles.title, { color: colors.text }]}>Voice Analysis</Text>
       </View>
       
       <FlatList
@@ -101,7 +105,7 @@ const VoiceClipListScreen: React.FC = () => {
           <RefreshControl
             refreshing={isRefreshing}
             onRefresh={() => loadVoiceClips(true)}
-            colors={['#007AFF']}
+            colors={[colors.primary]}
           />
         }
       />
@@ -118,18 +122,14 @@ const VoiceClipListScreen: React.FC = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#F2F2F7',
   },
   header: {
     padding: 16,
-    backgroundColor: '#FFFFFF',
     borderBottomWidth: 1,
-    borderBottomColor: '#EEEEEE',
   },
   title: {
     fontSize: 24,
     fontWeight: '700',
-    color: '#333',
   },
   listContent: {
     padding: 16,
@@ -144,12 +144,10 @@ const styles = StyleSheet.create({
   },
   emptyText: {
     fontSize: 16,
-    color: '#666',
     marginTop: 16,
   },
   errorText: {
     fontSize: 16,
-    color: '#FF3B30',
     textAlign: 'center',
     marginHorizontal: 32,
   },

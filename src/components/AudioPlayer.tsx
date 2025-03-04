@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import Icon from 'react-native-vector-icons/MaterialIcons';
 import { useAudio } from '../hooks/useAudio';
+import { useTheme } from '../theme/ThemeProvider';
 
 interface AudioPlayerProps {
   audioUrl: string;
@@ -9,6 +10,9 @@ interface AudioPlayerProps {
 }
 
 const AudioPlayer: React.FC<AudioPlayerProps> = ({ audioUrl, title }) => {
+  const theme = useTheme();
+  const { colors, borderRadius } = theme;
+  
   const { isPlaying, playAudio, stopPlaying, pausePlaying, resumePlaying } = useAudio();
   const [playbackState, setPlaybackState] = useState<'stopped' | 'playing' | 'paused'>('stopped');
 
@@ -40,19 +44,26 @@ const AudioPlayer: React.FC<AudioPlayerProps> = ({ audioUrl, title }) => {
   };
 
   return (
-    <View style={styles.container}>
-      {title && <Text style={styles.title}>{title}</Text>}
+    <View style={[
+      styles.container, 
+      { 
+        backgroundColor: colors.background,
+        borderRadius: borderRadius.md,
+        borderColor: colors.border,
+      }
+    ]}>
+      {title && <Text style={[styles.title, { color: colors.text }]}>{title}</Text>}
       <View style={styles.controls}>
         <TouchableOpacity onPress={handlePlayPause} style={styles.button}>
           <Icon
             name={playbackState === 'playing' ? 'pause' : 'play-arrow'}
             size={32}
-            color="#007AFF"
+            color={playbackState === 'playing' ? colors.playing : colors.primary}
           />
         </TouchableOpacity>
         {playbackState !== 'stopped' && (
           <TouchableOpacity onPress={handleStop} style={styles.button}>
-            <Icon name="stop" size={32} color="#FF3B30" />
+            <Icon name="stop" size={32} color={colors.error} />
           </TouchableOpacity>
         )}
       </View>
@@ -63,15 +74,13 @@ const AudioPlayer: React.FC<AudioPlayerProps> = ({ audioUrl, title }) => {
 const styles = StyleSheet.create({
   container: {
     padding: 16,
-    backgroundColor: '#f5f5f5',
-    borderRadius: 8,
+    borderWidth: 1,
     marginVertical: 8,
   },
   title: {
     fontSize: 16,
     fontWeight: '500',
     marginBottom: 8,
-    color: '#333',
   },
   controls: {
     flexDirection: 'row',
