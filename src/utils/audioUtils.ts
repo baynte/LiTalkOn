@@ -9,10 +9,15 @@ Sound.setCategory('Playback');
  */
 export const getRecordingPath = (filename = 'user_recording'): string => {
   const extension = Platform.OS === 'ios' ? 'm4a' : 'mp4';
-  return Platform.select({
-    ios: `${filename}.${extension}`,
-    android: `sdcard/${filename}.${extension}`,
-  }) || `${filename}.${extension}`;
+  
+  if (Platform.OS === 'android') {
+    // Use a relative path for Android internal storage
+    // This will store in the app's internal storage
+    return `${filename}.${extension}`;
+  } else {
+    // iOS already uses app's internal storage by default
+    return `${filename}.${extension}`;
+  }
 };
 
 /**

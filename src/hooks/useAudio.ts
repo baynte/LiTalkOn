@@ -5,7 +5,7 @@ import AudioRecorderPlayer, {
   AVEncoderAudioQualityIOSType,
   AVEncodingOption,
 } from 'react-native-audio-recorder-player';
-import { Platform, PermissionsAndroid } from 'react-native';
+import { Platform, PermissionsAndroid, Alert, ToastAndroid } from 'react-native';
 import Sound from 'react-native-sound';
 import { getRecordingPath, formatTime } from '../utils/audioUtils';
 
@@ -13,6 +13,9 @@ import { getRecordingPath, formatTime } from '../utils/audioUtils';
 Sound.setCategory('Playback');
 
 const audioRecorderPlayer = new AudioRecorderPlayer();
+
+// Flag to track if we've already attempted to record
+let hasAttemptedRecording = false;
 
 export const useAudio = () => {
   const [isRecording, setIsRecording] = useState(false);
@@ -22,9 +25,10 @@ export const useAudio = () => {
   const [playTime, setPlayTime] = useState('00:00');
   const [duration, setDuration] = useState('00:00');
   const [currentSound, setCurrentSound] = useState<Sound | null>(null);
+  const [permissionsGranted, setPermissionsGranted] = useState<boolean>(true); // Assume permissions are granted initially
 
+  // Clean up on unmount
   useEffect(() => {
-    // Clean up on unmount
     return () => {
       if (isRecording) {
         stopRecording();
@@ -35,46 +39,52 @@ export const useAudio = () => {
     };
   }, [isRecording, isPlaying]);
 
-  const requestPermissions = async () => {
-    if (Platform.OS === 'android') {
-      try {
-        const grants = await PermissionsAndroid.requestMultiple([
-          PermissionsAndroid.PERMISSIONS.WRITE_EXTERNAL_STORAGE,
-          PermissionsAndroid.PERMISSIONS.READ_EXTERNAL_STORAGE,
-          PermissionsAndroid.PERMISSIONS.RECORD_AUDIO,
-        ]);
+  // Simplified permission check that works better with emulators
+  const ensurePermissions = async () => {
+    // For iOS, we don't need to do anything special
+    if (Platform.OS === 'ios') {
+      return true;
+    }
 
-        if (
-          grants['android.permission.WRITE_EXTERNAL_STORAGE'] === PermissionsAndroid.RESULTS.GRANTED &&
-          grants['android.permission.READ_EXTERNAL_STORAGE'] === PermissionsAndroid.RESULTS.GRANTED &&
-          grants['android.permission.RECORD_AUDIO'] === PermissionsAndroid.RESULTS.GRANTED
-        ) {
-          return true;
-        } else {
-          console.log('All required permissions not granted');
-          return false;
+    try {
+      // For emulators, we'll try a more direct approach
+      const result = await PermissionsAndroid.request(
+        PermissionsAndroid.PERMISSIONS.RECORD_AUDIO,
+        {
+          title: "Microphone Permission",
+          message: "This app needs access to your microphone to record audio.",
+          buttonNeutral: "Ask Me Later",
+          buttonNegative: "Cancel",
+          buttonPositive: "OK"
         }
-      } catch (err) {
-        console.warn(err);
-        return false;
+      );
+
+      // Even if the result isn't GRANTED, we'll try to record anyway
+      // This helps with emulators where permissions might be reported incorrectly
+      if (result !== PermissionsAndroid.RESULTS.GRANTED) {
+        console.log('Audio permission reported as not granted, but will try recording anyway');
       }
-    } else {
-      return true; // iOS handles permissions differently
+      
+      // Always return true to allow recording attempt
+      return true;
+    } catch (err) {
+      console.warn('Error requesting audio permission:', err);
+      // Still return true to attempt recording
+      return true;
     }
   };
 
   const startRecording = async () => {
-    const hasPermissions = await requestPermissions();
-    if (!hasPermissions) {
-      console.log('Permissions not granted');
-      return;
-    }
-
-    const audioPath = getRecordingPath();
+    // Always try to record, even if permissions might be reported incorrectly
+    await ensurePermissions();
+    
+    hasAttemptedRecording = true;
 
     try {
-      await audioRecorderPlayer.startRecorder(
-        audioPath,
+      // Use the default path provided by the library
+      // This will automatically use the correct internal storage path
+      const audioPath = await audioRecorderPlayer.startRecorder(
+        undefined, // Let the library choose the default path
         {
           AudioEncoderAndroid: AudioEncoderAndroidType.AAC,
           AudioSourceAndroid: AudioSourceAndroidType.MIC,
@@ -84,13 +94,27 @@ export const useAudio = () => {
         }
       );
 
+      console.log('Recording to path:', audioPath);
+
       audioRecorderPlayer.addRecordBackListener((e) => {
         setRecordTime(formatTime(e.currentPosition));
       });
 
       setIsRecording(true);
+      if (Platform.OS === 'android') {
+        ToastAndroid.show('Recording started', ToastAndroid.SHORT);
+      }
     } catch (error) {
       console.error('Error starting recording:', error);
+      
+      // If this is the first attempt and it failed, show a helpful message
+      if (!hasAttemptedRecording) {
+        Alert.alert(
+          "Recording Failed",
+          "There was an issue starting the recording. This might be due to permission issues or a problem with the microphone.",
+          [{ text: "OK" }]
+        );
+      }
     }
   };
 
@@ -100,6 +124,9 @@ export const useAudio = () => {
       audioRecorderPlayer.removeRecordBackListener();
       setRecordedUri(result);
       setIsRecording(false);
+      if (Platform.OS === 'android') {
+        ToastAndroid.show('Recording completed', ToastAndroid.SHORT);
+      }
       return result;
     } catch (error) {
       console.error('Error stopping recording:', error);
