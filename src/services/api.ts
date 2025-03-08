@@ -3,7 +3,7 @@ import { VoiceClip, VoiceAnalysisResult } from '../types';
 import { mockVoiceClips, mockAnalysisResult } from '../utils/mockData';
 
 // Replace with your actual API base URL
-const API_BASE_URL = 'https://your-backend-api.com/api';
+const API_BASE_URL = 'http://172.16.2.208:8000/api';
 
 // Set this to false to use the actual API instead of mock data
 const USE_MOCK_DATA = true;

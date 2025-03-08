@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -7,6 +7,7 @@ import {
   TouchableOpacity,
   ScrollView,
   ActivityIndicator,
+  Platform,
 } from 'react-native';
 import Icon from 'react-native-vector-icons/MaterialIcons';
 import { VoiceClip, VoiceAnalysisResult } from '../types';
@@ -34,35 +35,137 @@ const VoiceAnalysisModal: React.FC<VoiceAnalysisModalProps> = ({
   const [analysisResult, setAnalysisResult] = useState<VoiceAnalysisResult | null>(null);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [isEmulator, setIsEmulator] = useState<boolean | null>(null);
+  const [analysisRequested, setAnalysisRequested] = useState(false);
+
+  // Check if running in an emulator
+  useEffect(() => {
+    const checkEmulator = async () => {
+      try {
+        // Simple check based on device model or brand
+        // This is a basic check and might not be 100% accurate
+        if (Platform.OS === 'android') {
+          // Access Android-specific constants with type assertion
+          const constants = Platform.constants as any;
+          const isLikelyEmulator = 
+            constants?.Model?.includes('sdk') || 
+            constants?.Model?.includes('Simulator') || 
+            constants?.Model?.includes('Emulator') ||
+            constants?.Manufacturer?.includes('Genymotion') ||
+            constants?.Brand?.toLowerCase() === 'google' ||
+            constants?.Model?.toLowerCase() === 'android sdk built for x86';
+          
+          setIsEmulator(isLikelyEmulator);
+          
+          if (isLikelyEmulator) {
+            console.log('Running in an emulator - recording may not work properly');
+          }
+        } else if (Platform.OS === 'ios') {
+          // Access iOS-specific constants with type assertion
+          const constants = Platform.constants as any;
+          const isSimulator = constants?.interfaceIdiom?.includes('Simulator');
+          setIsEmulator(isSimulator);
+          
+          if (isSimulator) {
+            console.log('Running in iOS Simulator - recording may not work properly');
+          }
+        }
+      } catch (err) {
+        console.error('Error detecting emulator:', err);
+      }
+    };
+    
+    checkEmulator();
+  }, []);
+
+  // Reset analysis state when modal becomes visible
+  useEffect(() => {
+    if (visible) {
+      // Only reset if we're opening the modal
+      setAnalysisRequested(false);
+    }
+  }, [visible]);
 
   const handleRecordingComplete = (audioUri: string) => {
     setUserRecordingUri(audioUri);
+    // Reset analysis state when a new recording is made
     setAnalysisResult(null);
     setError(null);
+    setAnalysisRequested(false);
+    
+    console.log('Recording completed, URI:', audioUri);
+    
+    // Only attempt to check file size if it's a valid URI
+    if (audioUri && (audioUri.startsWith('file://') || audioUri.startsWith('content://'))) {
+      // For local files, we'll rely on the fact that the file was created
+      // rather than trying to fetch it, which can cause network errors
+      console.log('Recording saved to local file:', audioUri);
+      
+      // We'll check the file size when analyzing, not here
+    } else if (audioUri && (audioUri.startsWith('http://') || audioUri.startsWith('https://'))) {
+      // Only use fetch for remote URLs, not local files
+      fetch(audioUri, { method: 'HEAD' })
+        .then(response => {
+          const contentLength = response.headers.get('Content-Length');
+          const fileSize = contentLength ? parseInt(contentLength, 10) : 0;
+          console.log(`Remote recording file size: ${fileSize} bytes`);
+          
+          if (fileSize <= 100) {
+            console.warn('Warning: Recording file appears to be empty or very small');
+          }
+        })
+        .catch(err => {
+          console.error('Error checking remote recording file:', err);
+        });
+    } else {
+      console.warn('Recording URI is in an unexpected format:', audioUri);
+    }
   };
 
   const handleAnalyzeVoice = async () => {
     if (!voiceClip || !userRecordingUri) return;
 
+    // Set flag to indicate user has explicitly requested analysis
+    setAnalysisRequested(true);
     setIsAnalyzing(true);
     setError(null);
 
+    console.log('User explicitly requested voice analysis');
+
     try {
+      // Log the URI we're about to analyze
+      console.log('Analyzing voice recording from URI:', userRecordingUri);
+      
+      // Check if this is a local file URI
+      const isLocalFile = userRecordingUri.startsWith('file://') || 
+                          userRecordingUri.startsWith('content://');
+      
       // Create a file object from the URI
-      const audioFile = createFileObject(userRecordingUri);
+      const audioFile = createFileObject(
+        userRecordingUri,
+        'audio/mp4',
+        isLocalFile ? 'user_recording.mp4' : 'remote_recording.mp4'
+      );
+      
+      console.log('Created file object for analysis:', {
+        uri: audioFile.uri,
+        type: audioFile.type,
+        name: audioFile.name
+      });
 
       const result = await analyzeVoiceComparison(voiceClip.id, audioFile);
       setAnalysisResult(result);
-    } catch (err) {
+    } catch (err: any) {
       console.error('Error analyzing voice:', err);
-      setError('Failed to analyze voice. Please try again.');
+      setError(`Failed to analyze voice: ${err?.message || 'Unknown error'}. Please try again.`);
     } finally {
       setIsAnalyzing(false);
     }
   };
 
   const renderAnalysisResult = () => {
-    if (!analysisResult) return null;
+    // Only render analysis result if user has explicitly requested analysis
+    if (!analysisResult || !analysisRequested) return null;
 
     return (
       <View style={styles.analysisContainer}>
@@ -152,6 +255,16 @@ const VoiceAnalysisModal: React.FC<VoiceAnalysisModalProps> = ({
           <ScrollView style={styles.scrollContent}>
             <Text style={[styles.description, { color: colors.textSecondary }]}>{voiceClip.description}</Text>
             
+            {isEmulator && (
+              <View style={[styles.emulatorWarning, { backgroundColor: colors.warning + '20', borderColor: colors.warning }]}>
+                <Icon name="warning" size={20} color={colors.warning} style={styles.warningIcon} />
+                <Text style={[styles.warningText, { color: colors.textSecondary }]}>
+                  You appear to be running in an emulator. Audio recording may not work properly in emulators due to limited microphone access. 
+                  For best results, test on a physical device.
+                </Text>
+              </View>
+            )}
+            
             <View style={styles.section}>
               <Text style={[styles.sectionTitle, { color: colors.text }]}>Original Voice Clip</Text>
               <AudioPlayer audioUrl={voiceClip.audioUrl} />
@@ -175,7 +288,9 @@ const VoiceAnalysisModal: React.FC<VoiceAnalysisModalProps> = ({
                   {isAnalyzing ? (
                     <ActivityIndicator size="small" color={colors.textOnPrimary} />
                   ) : (
-                    <Text style={[styles.analyzeButtonText, { color: colors.textOnPrimary }]}>Analyze Voice</Text>
+                    <Text style={[styles.analyzeButtonText, { color: colors.textOnPrimary }]}>
+                      {analysisRequested ? 'Analyze Again' : 'Analyze Voice'}
+                    </Text>
                   )}
                 </TouchableOpacity>
               </View>
@@ -304,6 +419,23 @@ const styles = StyleSheet.create({
     marginBottom: 4,
   },
   detailFeedback: {
+    fontSize: 14,
+    lineHeight: 20,
+  },
+  emulatorWarning: {
+    flexDirection: 'row',
+    padding: 12,
+    marginVertical: 12,
+    borderRadius: 8,
+    borderWidth: 1,
+    alignItems: 'flex-start',
+  },
+  warningIcon: {
+    marginRight: 8,
+    marginTop: 2,
+  },
+  warningText: {
+    flex: 1,
     fontSize: 14,
     lineHeight: 20,
   },
