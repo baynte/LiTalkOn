@@ -8,14 +8,15 @@ Sound.setCategory('Playback');
  * Get a file path for saving a recording
  */
 export const getRecordingPath = (filename = 'user_recording'): string => {
-  const extension = Platform.OS === 'ios' ? 'm4a' : 'mp4';
+  // Always use MP3 extension for better compatibility
+  const extension = 'mp3';
   
   if (Platform.OS === 'android') {
-    // Use a relative path for Android internal storage
-    // This will store in the app's internal storage
-    return `${filename}.${extension}`;
+    // Use a path that's likely to be writable in the emulator
+    // The 'cache' directory is typically writable
+    return `file:///data/user/0/com.litalk/cache/${filename}.${extension}`;
   } else {
-    // iOS already uses app's internal storage by default
+    // For iOS, use a relative path which will resolve to the app's documents directory
     return `${filename}.${extension}`;
   }
 };
@@ -41,7 +42,18 @@ export const isRemoteUrl = (url: string): boolean => {
 /**
  * Create a file object from a URI for API upload
  */
-export const createFileObject = (uri: string, type = 'audio/mp4', name = 'recording.mp4') => {
+export const createFileObject = (uri: string, type = 'audio/mpeg', name = 'recording.mp3') => {
+  // Validate that we're only using MP3 files
+  if (type !== 'audio/mpeg' && type !== 'audio/mp3') {
+    console.warn('Non-MP3 file type detected. Forcing audio/mpeg type.');
+    type = 'audio/mpeg';
+  }
+  
+  // Ensure the file has an .mp3 extension
+  if (!name.toLowerCase().endsWith('.mp3')) {
+    name = name.split('.')[0] + '.mp3';
+  }
+  
   return {
     uri,
     type,

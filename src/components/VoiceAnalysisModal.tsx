@@ -174,7 +174,7 @@ const VoiceAnalysisModal: React.FC<VoiceAnalysisModalProps> = ({
         <View style={[styles.scoreContainer, { backgroundColor: colors.primaryLight + '20' }]}>
           <Text style={[styles.scoreLabel, { color: colors.text }]}>Overall Similarity:</Text>
           <Text style={[styles.scoreValue, { color: colors.primary }]}>
-            {analysisResult.similarityScore ? `${Math.round(analysisResult.similarityScore * 100)}%` : 'N/A'}
+            {analysisResult.similarityScore ? `${Math.round(analysisResult.similarityScore)}%` : 'N/A'}
           </Text>
         </View>
 
@@ -190,7 +190,7 @@ const VoiceAnalysisModal: React.FC<VoiceAnalysisModalProps> = ({
               <View style={[styles.detailItem, { borderColor: colors.divider }]}>
                 <Text style={[styles.detailLabel, { color: colors.text }]}>Pitch:</Text>
                 <Text style={[styles.detailScore, { color: colors.primary }]}>
-                  {Math.round(analysisResult.analysisDetails.pitch.score * 100)}%
+                  {Math.round(analysisResult.analysisDetails.pitch.score)}%
                 </Text>
                 <Text style={[styles.detailFeedback, { color: colors.textSecondary }]}>
                   {analysisResult.analysisDetails.pitch.feedback}
@@ -202,7 +202,7 @@ const VoiceAnalysisModal: React.FC<VoiceAnalysisModalProps> = ({
               <View style={[styles.detailItem, { borderColor: colors.divider }]}>
                 <Text style={[styles.detailLabel, { color: colors.text }]}>Rhythm:</Text>
                 <Text style={[styles.detailScore, { color: colors.primary }]}>
-                  {Math.round(analysisResult.analysisDetails.rhythm.score * 100)}%
+                  {Math.round(analysisResult.analysisDetails.rhythm.score)}%
                 </Text>
                 <Text style={[styles.detailFeedback, { color: colors.textSecondary }]}>
                   {analysisResult.analysisDetails.rhythm.feedback}
@@ -214,7 +214,7 @@ const VoiceAnalysisModal: React.FC<VoiceAnalysisModalProps> = ({
               <View style={[styles.detailItem, { borderColor: colors.divider }]}>
                 <Text style={[styles.detailLabel, { color: colors.text }]}>Pronunciation:</Text>
                 <Text style={[styles.detailScore, { color: colors.primary }]}>
-                  {Math.round(analysisResult.analysisDetails.pronunciation.score * 100)}%
+                  {Math.round(analysisResult.analysisDetails.pronunciation.score)}%
                 </Text>
                 <Text style={[styles.detailFeedback, { color: colors.textSecondary }]}>
                   {analysisResult.analysisDetails.pronunciation.feedback}

@@ -37,6 +37,7 @@ const VoiceClipListScreen: React.FC = () => {
 
     try {
       const clips = await fetchVoiceClips();
+      console.log('Fetched voice clips Here:', clips);
       setVoiceClips(clips);
     } catch (err) {
       console.error('Error fetching voice clips:', err);

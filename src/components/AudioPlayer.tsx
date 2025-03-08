@@ -3,6 +3,7 @@ import { View, Text, TouchableOpacity, StyleSheet, ActivityIndicator, Alert } fr
 import Icon from 'react-native-vector-icons/MaterialIcons';
 import { useAudio } from '../hooks/useAudio';
 import { useTheme } from '../theme/ThemeProvider';
+import { formatTime } from '../utils/audioUtils';
 
 interface AudioPlayerProps {
   audioUrl: string;
@@ -13,64 +14,80 @@ const AudioPlayer: React.FC<AudioPlayerProps> = ({ audioUrl, title }) => {
   const theme = useTheme();
   const { colors, borderRadius } = theme;
   
-  const { isPlaying, playAudio, stopPlaying, pausePlaying, resumePlaying, duration, recordingFileSize } = useAudio();
-  const [playbackState, setPlaybackState] = useState<'stopped' | 'playing' | 'paused' | 'loading'>('stopped');
+  const { 
+    isPlaying, 
+    playTime, 
+    duration, 
+    playAudio, 
+    stopPlaying, 
+    pausePlaying, 
+    resumePlaying, 
+    recordingFileSize
+  } = useAudio();
+  
+  const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [progress, setProgress] = useState(0);
 
+  // Reset state when audioUrl changes
   useEffect(() => {
-    return () => {
-      // Clean up when component unmounts
-      if (playbackState !== 'stopped') {
-        stopPlaying();
-      }
-    };
-  }, [playbackState, stopPlaying]);
+    stopPlaying();
+    setError(null);
+    setProgress(0);
+  }, [audioUrl]);
 
-  // Update playback state when isPlaying changes
+  // Update progress based on playTime and duration
   useEffect(() => {
-    if (!isPlaying && playbackState === 'playing') {
-      setPlaybackState('stopped');
+    if (duration === '00:00' || playTime === '00:00') {
+      setProgress(0);
+      return;
     }
-  }, [isPlaying, playbackState]);
+
+    // Convert time strings to seconds for calculation
+    const playTimeSeconds = timeStringToSeconds(playTime);
+    const durationSeconds = timeStringToSeconds(duration);
+    
+    if (durationSeconds > 0) {
+      setProgress(playTimeSeconds / durationSeconds);
+    }
+  }, [playTime, duration]);
+
+  // Helper function to convert time string (MM:SS) to seconds
+  const timeStringToSeconds = (timeString: string): number => {
+    const [minutes, seconds] = timeString.split(':').map(Number);
+    return minutes * 60 + seconds;
+  };
 
   const handlePlayPause = () => {
-    setError(null);
-    
-    if (playbackState === 'stopped') {
-      try {
-        setPlaybackState('loading');
-        
-        // Check if the file exists and has a valid URL
-        if (!audioUrl) {
-          setError('No audio file available');
-          setPlaybackState('stopped');
-          return;
-        }
-        
-        // Verify the URL format
-        if (!audioUrl.startsWith('file://') && !audioUrl.startsWith('http://') && !audioUrl.startsWith('https://')) {
-          console.warn('Audio URL may not be in the correct format:', audioUrl);
-        }
-        
-        playAudio(audioUrl);
-        setPlaybackState('playing');
-      } catch (err: any) {
-        console.error('Error playing audio:', err);
-        setError(err?.message || 'Failed to play audio');
-        setPlaybackState('stopped');
-      }
-    } else if (playbackState === 'playing') {
+    if (loading) return;
+
+    if (isPlaying) {
       pausePlaying();
-      setPlaybackState('paused');
-    } else if (playbackState === 'paused') {
-      resumePlaying();
-      setPlaybackState('playing');
+    } else {
+      if (progress > 0) {
+        // Resume if already started
+        resumePlaying();
+      } else {
+        // Start new playback
+        setLoading(true);
+        setError(null);
+        
+        try {
+          console.log('AudioPlayer: Starting playback of', audioUrl);
+          playAudio(audioUrl);
+        } catch (err) {
+          console.error('AudioPlayer: Error starting playback:', err);
+          setError('Failed to play audio');
+        } finally {
+          setLoading(false);
+        }
+      }
     }
   };
 
   const handleStop = () => {
     stopPlaying();
-    setPlaybackState('stopped');
+    setProgress(0);
   };
 
   // Check if the file might be empty or invalid
@@ -95,6 +112,26 @@ const AudioPlayer: React.FC<AudioPlayerProps> = ({ audioUrl, title }) => {
     }
   }, [isEmptyFile, audioUrl]);
 
+  // Render progress bar
+  const renderProgressBar = () => {
+    return (
+      <View style={styles.progressContainer}>
+        <View style={styles.progressBackground}>
+          <View 
+            style={[
+              styles.progressFill, 
+              { width: `${progress * 100}%` }
+            ]} 
+          />
+        </View>
+        <View style={styles.timeContainer}>
+          <Text style={styles.timeText}>{playTime}</Text>
+          <Text style={styles.timeText}>{duration}</Text>
+        </View>
+      </View>
+    );
+  };
+
   return (
     <View style={[
       styles.container, 
@@ -106,36 +143,45 @@ const AudioPlayer: React.FC<AudioPlayerProps> = ({ audioUrl, title }) => {
     ]}>
       {title && <Text style={[styles.title, { color: colors.text }]}>{title}</Text>}
       
-      <View style={styles.controls}>
-        {playbackState === 'loading' ? (
-          <ActivityIndicator size="large" color={colors.primary} />
-        ) : (
-          <TouchableOpacity onPress={handlePlayPause} style={styles.button}>
-            <Icon
-              name={playbackState === 'playing' ? 'pause' : 'play-arrow'}
-              size={32}
-              color={playbackState === 'playing' ? colors.playing : colors.primary}
-            />
-          </TouchableOpacity>
-        )}
-        
-        {playbackState !== 'stopped' && playbackState !== 'loading' && (
-          <TouchableOpacity onPress={handleStop} style={styles.button}>
-            <Icon name="stop" size={32} color={colors.error} />
-          </TouchableOpacity>
-        )}
-        
-        {duration !== '00:00' && (
-          <Text style={[styles.duration, { color: colors.textSecondary }]}>
-            {duration}
-          </Text>
-        )}
-      </View>
-      
-      {error && (
-        <Text style={[styles.errorText, { color: colors.error }]}>
-          {error}
-        </Text>
+      {error ? (
+        <View style={styles.errorContainer}>
+          <Icon name="error-outline" size={24} color="#e74c3c" />
+          <Text style={styles.errorText}>{error}</Text>
+        </View>
+      ) : (
+        <>
+          {renderProgressBar()}
+          
+          <View style={styles.controls}>
+            <TouchableOpacity 
+              style={styles.controlButton} 
+              onPress={handleStop}
+              disabled={loading || (!isPlaying && progress === 0)}
+            >
+              <Icon 
+                name="stop" 
+                size={32} 
+                color={loading || (!isPlaying && progress === 0) ? '#999' : '#333'} 
+              />
+            </TouchableOpacity>
+            
+            <TouchableOpacity 
+              style={[styles.controlButton, styles.playButton]} 
+              onPress={handlePlayPause}
+              disabled={loading}
+            >
+              {loading ? (
+                <ActivityIndicator size="large" color="#fff" />
+              ) : (
+                <Icon 
+                  name={isPlaying ? "pause" : "play-arrow"} 
+                  size={40} 
+                  color="#fff" 
+                />
+              )}
+            </TouchableOpacity>
+          </View>
+        </>
       )}
       
       {isEmptyFile && !audioUrl.startsWith('file://') && (
@@ -168,19 +214,55 @@ const styles = StyleSheet.create({
     fontWeight: '500',
     marginBottom: 8,
   },
+  progressContainer: {
+    marginBottom: 16,
+  },
+  progressBackground: {
+    height: 8,
+    backgroundColor: '#ddd',
+    borderRadius: 4,
+    overflow: 'hidden',
+  },
+  progressFill: {
+    height: '100%',
+    backgroundColor: '#3498db',
+    borderRadius: 4,
+  },
+  timeContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginTop: 4,
+  },
+  timeText: {
+    fontSize: 12,
+    color: '#666',
+  },
   controls: {
     flexDirection: 'row',
+    justifyContent: 'center',
     alignItems: 'center',
   },
-  button: {
-    marginRight: 16,
+  controlButton: {
+    padding: 8,
+    borderRadius: 30,
+    marginHorizontal: 16,
   },
-  duration: {
-    fontSize: 14,
-    marginLeft: 8,
+  playButton: {
+    backgroundColor: '#3498db',
+    width: 60,
+    height: 60,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  errorContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: 16,
   },
   errorText: {
-    marginTop: 8,
+    color: '#e74c3c',
+    marginLeft: 8,
     fontSize: 14,
   },
   warningText: {
