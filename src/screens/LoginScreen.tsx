@@ -32,31 +32,11 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ navigation }) => {
   const [error, setError] = useState<string | null>(null);
 
   const handleLogin = async () => {
-    // Basic validation
-    if (!credentials.username || !credentials.password) {
-      setError('Please enter both username and password');
-      return;
-    }
-
-    // Debug log to check credentials before submission
-    console.log('Credentials before submission:', {
-      username: credentials.username,
-      passwordLength: credentials.password.length,
-      passwordFirstChar: credentials.password.charAt(0),
-      passwordLastChar: credentials.password.charAt(credentials.password.length - 1),
-    });
-
     setIsLoading(true);
-    setError(null);
-
+    setError('');
+    
     try {
-      console.log('Submitting login form...', {
-        username: credentials.username,
-        passwordProvided: credentials.password ? 'Yes' : 'No',
-        passwordLength: credentials.password.length
-      });
-      
-      // Create a proper credentials object
+      // Prepare login data
       const loginData = {
         username: credentials.username.trim(),
         password: credentials.password
@@ -71,8 +51,15 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ navigation }) => {
       
       console.log('Login successful:', result);
       
-      // Navigate to the main screen
-      navigation.replace('VoiceClipList');
+      // Navigate based on user_group
+      if (result.user_group === 'teacher') {
+        navigation.replace('TeacherDashboard');
+      } else if (result.user_group === 'student') {
+        navigation.replace('StudentDashboard');
+      } else {
+        // Fallback to voice clip list if user_group is not recognized
+        navigation.replace('VoiceClipList');
+      }
     } catch (err: any) {
       console.error('Login error in component:', err);
       

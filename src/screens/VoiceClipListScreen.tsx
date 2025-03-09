@@ -8,6 +8,7 @@ import {
   RefreshControl,
   SafeAreaView,
   StatusBar,
+  TouchableOpacity,
 } from 'react-native';
 import { VoiceClip } from '../types';
 import VoiceClipItem from '../components/VoiceClipItem';
@@ -37,7 +38,6 @@ const VoiceClipListScreen: React.FC = () => {
 
     try {
       const clips = await fetchVoiceClips();
-      console.log('Fetched voice clips Here:', clips);
       setVoiceClips(clips);
     } catch (err) {
       console.error('Error fetching voice clips:', err);
@@ -86,6 +86,18 @@ const VoiceClipListScreen: React.FC = () => {
     );
   };
 
+  const renderVoiceClipItem = ({ item }: { item: VoiceClip }) => {
+    return (
+      <TouchableOpacity
+        onPress={() => handleVoiceClipPress(item)}
+      >
+        <View style={styles.clipInfo}>
+          <Text style={[styles.clipTitle, { color: colors.text }]}>{item.name}</Text>
+        </View>
+      </TouchableOpacity>
+    );
+  };
+
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
       <StatusBar barStyle="dark-content" backgroundColor={colors.surface} />
@@ -96,9 +108,7 @@ const VoiceClipListScreen: React.FC = () => {
       
       <FlatList
         data={voiceClips}
-        renderItem={({ item }) => (
-          <VoiceClipItem item={item} onPress={handleVoiceClipPress} />
-        )}
+        renderItem={renderVoiceClipItem}
         keyExtractor={(item) => item.id}
         contentContainerStyle={styles.listContent}
         ListEmptyComponent={renderEmptyList}
@@ -151,6 +161,13 @@ const styles = StyleSheet.create({
     fontSize: 16,
     textAlign: 'center',
     marginHorizontal: 32,
+  },
+  clipInfo: {
+    padding: 16,
+  },
+  clipTitle: {
+    fontSize: 18,
+    fontWeight: '700',
   },
 });
 

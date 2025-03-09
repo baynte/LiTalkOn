@@ -1,9 +1,13 @@
 import axios from 'axios';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { User, LoginCredentials, RegisterData } from '../types';
-import { API_BASE_URL } from './api';
+import { API_BASE_URL, setAuthToken, setCurrentUser, clearAuth } from './api';
 
 // For demo purposes, we'll use mock data
 const USE_MOCK_DATA = false;
+
+// Token refresh constants
+const REFRESH_TOKEN_KEY = 'refresh_token';
 
 // Create an axios instance for auth requests
 const authApi = axios.create({
@@ -24,13 +28,14 @@ const mockUser: User = {
   last_name: 'User',
   profilePicture: 'https://randomuser.me/api/portraits/lego/1.jpg',
   createdAt: new Date().toISOString(),
+  user_group: 'teacher', // Default to teacher for mock data
 };
 
 // Mock token
 const mockToken = 'mock-jwt-token-for-demo-purposes';
 
 // Login function
-export const login = async (credentials: LoginCredentials): Promise<{ user: User; token: string }> => {
+export const login = async (credentials: LoginCredentials): Promise<{ user: User; token: string; user_group: string }> => {
   // Simulate network delay
   if (USE_MOCK_DATA) {
     await new Promise(resolve => setTimeout(resolve, 1000));
@@ -40,7 +45,7 @@ export const login = async (credentials: LoginCredentials): Promise<{ user: User
       throw new Error('Invalid username or password');
     }
     
-    return { user: mockUser, token: mockToken };
+    return { user: mockUser, token: mockToken, user_group: mockUser.user_group };
   }
 
   try {
@@ -117,6 +122,49 @@ export const login = async (credentials: LoginCredentials): Promise<{ user: User
     }
     
     console.log('Login response:', response.data);
+    
+    // Set the auth token and user data for future API requests
+    // Django REST Framework returns token in format: { token: "your-token" }
+    let token = null;
+    if (response.data.token) {
+      // Standard token authentication
+      token = response.data.token;
+    } else if (response.data.key) {
+      // Django REST auth sometimes uses 'key' instead of 'token'
+      token = response.data.key;
+    } else if (response.data.access) {
+      // For JWT authentication
+      token = response.data.access;
+      // Store the refresh token for later use
+      if (response.data.refresh) {
+        await AsyncStorage.setItem(REFRESH_TOKEN_KEY, response.data.refresh);
+        console.log('Refresh token stored');
+      }
+    }
+    
+    if (token) {
+      // Store the token without the 'Token ' prefix - we'll add it in the interceptor
+      await setAuthToken(token);
+      
+      // Handle user data which might be in different formats
+      let userData = null;
+      if (response.data.user) {
+        userData = response.data.user;
+      } else if (response.data.user_id) {
+        // If only user_id is provided, we might need to fetch user details separately
+        userData = { id: response.data.user_id, ...response.data };
+      } else {
+        // If no user object is provided, use whatever data we have
+        userData = { ...response.data };
+        delete userData.token; // Remove token from user data
+        delete userData.key;   // Remove key from user data
+        delete userData.access; // Remove access token from user data
+        delete userData.refresh; // Remove refresh token from user data
+      }
+      
+      await setCurrentUser(userData);
+    }
+    
     return response.data;
   } catch (error: any) {
     console.error('Login error details:', error.response?.data || error.message);
@@ -158,6 +206,7 @@ export const register = async (data: RegisterData): Promise<{ user: User; token:
       first_name: data.first_name,
       last_name: data.last_name,
       createdAt: new Date().toISOString(),
+      user_group: 'student', // Default to student for new users
     };
     
     return { user: newUser, token: mockToken };
@@ -190,6 +239,49 @@ export const register = async (data: RegisterData): Promise<{ user: User; token:
     
     const response = await authApi.post('/auth/register/', payload);
     console.log('Registration response:', response.data);
+    
+    // Set the auth token and user data for future API requests
+    // Django REST Framework returns token in format: { token: "your-token" }
+    let token = null;
+    if (response.data.token) {
+      // Standard token authentication
+      token = response.data.token;
+    } else if (response.data.key) {
+      // Django REST auth sometimes uses 'key' instead of 'token'
+      token = response.data.key;
+    } else if (response.data.access) {
+      // For JWT authentication
+      token = response.data.access;
+      // Store the refresh token for later use
+      if (response.data.refresh) {
+        await AsyncStorage.setItem(REFRESH_TOKEN_KEY, response.data.refresh);
+        console.log('Refresh token stored');
+      }
+    }
+    
+    if (token) {
+      // Store the token without the 'Token ' prefix - we'll add it in the interceptor
+      await setAuthToken(token);
+      
+      // Handle user data which might be in different formats
+      let userData = null;
+      if (response.data.user) {
+        userData = response.data.user;
+      } else if (response.data.user_id) {
+        // If only user_id is provided, we might need to fetch user details separately
+        userData = { id: response.data.user_id, ...response.data };
+      } else {
+        // If no user object is provided, use whatever data we have
+        userData = { ...response.data };
+        delete userData.token; // Remove token from user data
+        delete userData.key;   // Remove key from user data
+        delete userData.access; // Remove access token from user data
+        delete userData.refresh; // Remove refresh token from user data
+      }
+      
+      await setCurrentUser(userData);
+    }
+    
     return response.data;
   } catch (error: any) {
     console.error('Registration error details:', error.response?.data || error.message);
@@ -204,16 +296,29 @@ export const register = async (data: RegisterData): Promise<{ user: User; token:
 export const logout = async (): Promise<void> => {
   if (USE_MOCK_DATA) {
     await new Promise(resolve => setTimeout(resolve, 500));
+    await clearAuth();
+    // Also clear the refresh token
+    await AsyncStorage.removeItem(REFRESH_TOKEN_KEY);
     return;
   }
 
   try {
     console.log('Sending logout request to:', `${API_BASE_URL}/auth/logout`);
-    await authApi.post('/auth/logout');
+    await authApi.post('/auth/logout/');
     console.log('Logout successful');
+    
+    // Clear the auth token and user data
+    await clearAuth();
+    // Also clear the refresh token
+    await AsyncStorage.removeItem(REFRESH_TOKEN_KEY);
   } catch (error) {
     console.error('Error during logout:', error);
     // We don't throw here because we want to clear the local state regardless
+    
+    // Clear the auth token and user data anyway
+    await clearAuth();
+    // Also clear the refresh token
+    await AsyncStorage.removeItem(REFRESH_TOKEN_KEY);
   }
 };
 
@@ -226,11 +331,55 @@ export const getCurrentUser = async (): Promise<User> => {
 
   try {
     console.log('Fetching current user data from:', `${API_BASE_URL}/auth/me`);
-    const response = await authApi.get('/auth/me');
+    // Get the current auth token
+    const token = await AsyncStorage.getItem('auth_token');
+    
+    // Create request config with authorization header
+    const config = {
+      headers: {
+        Authorization: token ? `Token ${token}` : '',
+      }
+    };
+    
+    // Attach the token to the request
+    const response = await authApi.get('/auth/me', config);
     console.log('Current user data:', response.data);
     return response.data;
   } catch (error) {
     console.error('Error fetching user data:', error);
     throw new Error('Failed to get user information');
+  }
+};
+
+// Refresh token function for JWT authentication
+export const refreshToken = async (): Promise<boolean> => {
+  try {
+    // Get the refresh token from storage
+    const refreshToken = await AsyncStorage.getItem(REFRESH_TOKEN_KEY);
+    
+    if (!refreshToken) {
+      console.log('No refresh token available');
+      return false;
+    }
+    
+    console.log('Attempting to refresh token');
+    
+    const response = await authApi.post('/auth/token/refresh/', {
+      refresh: refreshToken
+    });
+    
+    if (response.data.access) {
+      // Update the access token
+      await setAuthToken(response.data.access);
+      console.log('Token refreshed successfully');
+      return true;
+    }
+    
+    return false;
+  } catch (error) {
+    console.error('Error refreshing token:', error);
+    // If refresh fails, clear auth and return to login
+    await clearAuth();
+    return false;
   }
 }; 

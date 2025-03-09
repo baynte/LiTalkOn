@@ -5,19 +5,15 @@
  * @format
  */
 
-import React, { useState, useEffect } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
-import { NavigationContainer, DefaultTheme } from '@react-navigation/native';
-import { createStackNavigator } from '@react-navigation/stack';
-import VoiceClipListScreen from './src/screens/VoiceClipListScreen';
-import LoginScreen from './src/screens/LoginScreen';
-import RegisterScreen from './src/screens/RegisterScreen';
 import { ThemeProvider } from './src/theme/ThemeProvider';
+import AppNavigator from './src/navigation';
+import { initializeAuth, setNavigationRef } from './src/services/api';
+import { ActivityIndicator, View } from 'react-native';
+import { NavigationContainerRef, NavigationContainer, DefaultTheme } from '@react-navigation/native';
+import { RootStackParamList } from './src/navigation';
 import colors from './src/theme/colors';
-import { View, ActivityIndicator } from 'react-native';
-
-// Create the stack navigator
-const Stack = createStackNavigator();
 
 // Create a custom navigation theme
 const navigationTheme = {
@@ -35,52 +31,44 @@ const navigationTheme = {
 };
 
 function App(): React.JSX.Element {
-  // For demo purposes, we'll start with the login screen
-  // In a real app, you would check if the user is already logged in
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
-  const [isLoading, setIsLoading] = useState(true);
+  const [isInitializing, setIsInitializing] = useState(true);
+  const navigationRef = useRef<NavigationContainerRef<RootStackParamList>>(null);
 
-  // Simulate checking for existing login
   useEffect(() => {
-    const checkLoginStatus = async () => {
-      // In a real app, you would check for a stored token
-      // For demo purposes, we'll just set isLoggedIn to false
-      setTimeout(() => {
-        setIsLoggedIn(false);
-        setIsLoading(false);
-      }, 1000);
+    const initAuth = async () => {
+      try {
+        // Initialize authentication from storage
+        await initializeAuth();
+      } catch (error) {
+        console.error('Error initializing auth:', error);
+      } finally {
+        setIsInitializing(false);
+      }
     };
 
-    checkLoginStatus();
+    initAuth();
   }, []);
 
-  if (isLoading) {
-    // In a real app, you would show a splash screen here
+  // Set the navigation reference for auth redirects
+  useEffect(() => {
+    if (navigationRef.current) {
+      setNavigationRef(navigationRef.current);
+    }
+  }, [navigationRef.current]);
+
+  if (isInitializing) {
     return (
-      <ThemeProvider>
-        <SafeAreaProvider>
-          <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: colors.background }}>
-            <ActivityIndicator size="large" color={colors.primary} />
-          </View>
-        </SafeAreaProvider>
-      </ThemeProvider>
+      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+        <ActivityIndicator size="large" color="#0000ff" />
+      </View>
     );
   }
 
   return (
     <ThemeProvider>
       <SafeAreaProvider>
-        <NavigationContainer theme={navigationTheme}>
-          <Stack.Navigator
-            initialRouteName={isLoggedIn ? "VoiceClipList" : "Login"}
-            screenOptions={{
-              headerShown: false,
-            }}
-          >
-            <Stack.Screen name="Login" component={LoginScreen} />
-            <Stack.Screen name="Register" component={RegisterScreen} />
-            <Stack.Screen name="VoiceClipList" component={VoiceClipListScreen} />
-          </Stack.Navigator>
+        <NavigationContainer ref={navigationRef} theme={navigationTheme}>
+          <AppNavigator />
         </NavigationContainer>
       </SafeAreaProvider>
     </ThemeProvider>

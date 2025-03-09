@@ -246,7 +246,7 @@ const VoiceAnalysisModal: React.FC<VoiceAnalysisModalProps> = ({
           }
         ]}>
           <View style={[styles.header, { borderBottomColor: colors.divider }]}>
-            <Text style={[styles.title, { color: colors.text }]}>{voiceClip.title}</Text>
+            <Text style={[styles.title, { color: colors.text }]}>{voiceClip.name}</Text>
             <TouchableOpacity onPress={onClose} style={styles.closeButton}>
               <Icon name="close" size={24} color={colors.icon} />
             </TouchableOpacity>

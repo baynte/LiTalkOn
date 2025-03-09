@@ -1,6 +1,6 @@
 export interface VoiceClip {
   id: string;
-  title: string;
+  name: string;
   description: string;
   audioUrl: string;
   createdAt: string;
@@ -35,6 +35,7 @@ export interface User {
   last_name: string;
   profilePicture?: string;
   createdAt: string;
+  user_group: 'student' | 'teacher';
 }
 
 export interface AuthState {
@@ -57,4 +58,35 @@ export interface RegisterData {
   confirmPassword: string;
   first_name: string;
   last_name: string;
+}
+
+// Test types
+export interface PracticeTest {
+  id: string;
+  name: string;
+  description: string;
+  voiceClipIds: string[];
+  createdAt: string;
+  createdBy: string;
+}
+
+export interface ExamTest {
+  id: string;
+  name: string;
+  description: string;
+  voiceClipIds: string[];
+  createdAt: string;
+  createdBy: string;
+  timeLimit?: number; // Optional time limit in minutes
+}
+
+// Student ranking type
+export interface StudentRanking {
+  id: string;
+  student_id: string;
+  student_name: string;
+  exam_id: string;
+  exam_name: string;
+  score: number;
+  completed_at: string;
 } 
