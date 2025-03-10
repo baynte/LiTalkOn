@@ -132,7 +132,7 @@ const ExamTestDetailScreen: React.FC<ExamTestDetailScreenProps> = ({ navigation,
     setIsAnalyzing(true);
     
     try {
-      const result = await analyzeVoiceComparison(clipId, audioFile);
+      const result = await analyzeVoiceComparison(clipId, audioFile, testId, 1);
       
       // Add result to results array
       setAnalysisResults((prevResults) => [...prevResults, result]);

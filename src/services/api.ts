@@ -5,7 +5,8 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 
 // Replace with your actual API base URL
 // export const API_BASE_URL = 'http://172.16.2.208:8000/api';
-export const API_BASE_URL = 'http://172.16.2.167:8000/api';
+// export const API_BASE_URL = 'http://172.16.2.167:8000/api';
+export const API_BASE_URL = 'http://192.168.6.5:8000/api';
 
 // Set this to false to use the actual API instead of mock data
 const USE_MOCK_DATA = false;
@@ -323,7 +324,8 @@ export const getVoiceClipById = async (id: string): Promise<VoiceClip> => {
 export const analyzeVoiceComparison = async (
   originalClipId: string,
   userAudioFile: any,
-  testId: string
+  testId: string,
+  test_type: number = 0
 ): Promise<VoiceAnalysisResult> => {
   console.log(`Analyzing voice comparison for clip ID: ${originalClipId}`);
   
@@ -385,6 +387,7 @@ export const analyzeVoiceComparison = async (
     formData.append('originalClipId', originalClipId);
     formData.append('userAudio', userAudioFile);
     formData.append('test_id', testId);
+    formData.append('test_type', test_type.toString());
 
     const response = await api.post('/analyze-voice/', formData, {
       headers: {
