@@ -137,9 +137,9 @@ const StudentRankingsScreen: React.FC<StudentRankingsScreenProps> = ({ navigatio
         
         <View style={styles.studentInfo}>
           <Text style={[styles.studentName, { color: colors.text }]}>{item.student_name}</Text>
-          <Text style={[styles.examTitle, { color: colors.textSecondary }]}>
+          {/* <Text style={[styles.examTitle, { color: colors.textSecondary }]}>
             {item.exam_name}
-          </Text>
+          </Text> */}
           <Text style={[styles.completedDate, { color: colors.textSecondary }]}>
             Completed on {new Date(item.completed_at).toLocaleDateString()}
           </Text>

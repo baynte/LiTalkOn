@@ -160,7 +160,7 @@ const TeacherDashboardScreen: React.FC<TeacherDashboardScreenProps> = ({ navigat
               </View>
               <View style={styles.studentInfo}>
                 <Text style={[styles.studentName, { color: colors.text }]}>{student.student_name}</Text>
-                <Text style={[styles.examTitle, { color: colors.textSecondary }]}>{student.exam_name}</Text>
+                {/* <Text style={[styles.examTitle, { color: colors.textSecondary }]}>{student.exam_name}</Text> */}
               </View>
               <Text style={[styles.scoreText, { color: colors.success }]}>{student.score}%</Text>
             </View>
