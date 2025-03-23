@@ -6,7 +6,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 // Replace with your actual API base URL
 // export const API_BASE_URL = 'http://172.16.2.208:8000/api';
 // export const API_BASE_URL = 'http://172.16.2.167:8000/api';
-export const API_BASE_URL = 'http://192.168.6.5:8000/api';
+export const API_BASE_URL = 'http://192.168.252.5:8000/api';
 
 // Set this to false to use the actual API instead of mock data
 const USE_MOCK_DATA = false;

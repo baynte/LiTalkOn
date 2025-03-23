@@ -58,6 +58,7 @@ export interface RegisterData {
   confirmPassword: string;
   first_name: string;
   last_name: string;
+  user_type: 'teacher' | 'student';
 }
 
 // Test types

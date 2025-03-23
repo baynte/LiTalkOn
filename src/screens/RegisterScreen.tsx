@@ -30,6 +30,7 @@ const RegisterScreen: React.FC<RegisterScreenProps> = ({ navigation }) => {
     confirmPassword: '',
     first_name: '',
     last_name: '',
+    user_type: 'student',
   });
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -61,8 +62,12 @@ const RegisterScreen: React.FC<RegisterScreenProps> = ({ navigation }) => {
       
       console.log('Registration successful:', result);
       
-      // Navigate to the main screen
-      navigation.replace('VoiceClipList');
+      // Navigate based on user type
+      if (formData.user_type === 'teacher') {
+        navigation.replace('TeacherDashboard');
+      } else {
+        navigation.replace('StudentDashboard');
+      }
     } catch (err: any) {
       console.error('Registration error in component:', err);
       
@@ -233,6 +238,50 @@ const RegisterScreen: React.FC<RegisterScreenProps> = ({ navigation }) => {
             />
           </View>
 
+          <View style={styles.inputGroup}>
+            <Text style={[styles.label, { color: colors.textSecondary }]}>User Type</Text>
+            <View style={styles.userTypeContainer}>
+              <TouchableOpacity
+                style={[
+                  styles.userTypeButton,
+                  {
+                    backgroundColor: formData.user_type === 'student' ? colors.primary : colors.background,
+                    borderColor: colors.border,
+                  },
+                ]}
+                onPress={() => setFormData({ ...formData, user_type: 'student' })}
+              >
+                <Text
+                  style={[
+                    styles.userTypeText,
+                    { color: formData.user_type === 'student' ? colors.textOnPrimary : colors.text },
+                  ]}
+                >
+                  Student
+                </Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[
+                  styles.userTypeButton,
+                  {
+                    backgroundColor: formData.user_type === 'teacher' ? colors.primary : colors.background,
+                    borderColor: colors.border,
+                  },
+                ]}
+                onPress={() => setFormData({ ...formData, user_type: 'teacher' })}
+              >
+                <Text
+                  style={[
+                    styles.userTypeText,
+                    { color: formData.user_type === 'teacher' ? colors.textOnPrimary : colors.text },
+                  ]}
+                >
+                  Teacher
+                </Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+
           <TouchableOpacity
             style={[
               styles.button,
@@ -367,6 +416,23 @@ const styles = StyleSheet.create({
   footerText: {
     fontSize: 12,
     textAlign: 'center',
+  },
+  userTypeContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    gap: 12,
+  },
+  userTypeButton: {
+    flex: 1,
+    height: 50,
+    borderRadius: 8,
+    borderWidth: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  userTypeText: {
+    fontSize: 16,
+    fontWeight: '500',
   },
 });
 

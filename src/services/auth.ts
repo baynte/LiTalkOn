@@ -234,7 +234,8 @@ export const register = async (data: RegisterData): Promise<{ user: User; token:
       email: data.email,
       password: data.password,
       first_name: data.first_name,
-      last_name: data.last_name
+      last_name: data.last_name,
+      user_type: data.user_type
     };
     
     const response = await authApi.post('/auth/register/', payload);
