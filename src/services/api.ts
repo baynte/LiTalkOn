@@ -6,7 +6,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 // Replace with your actual API base URL
 // export const API_BASE_URL = 'http://172.16.2.208:8000/api';
 // export const API_BASE_URL = 'http://172.16.2.167:8000/api';
-export const API_BASE_URL = 'http://192.168.252.5:8000/api';
+export const API_BASE_URL = 'http://172.16.2.208:8000/api';
 
 // Set this to false to use the actual API instead of mock data
 const USE_MOCK_DATA = false;
@@ -582,6 +582,53 @@ export const getStudentRankingsByExamId = async (examId: string): Promise<Studen
     return response.data;
   } catch (error) {
     console.error(`Error fetching student rankings for exam ${examId}:`, error);
+    throw error;
+  }
+};
+
+// Teacher Voice Clips API
+export const uploadTeacherVoiceClip = async (formData: FormData) => {
+  try {
+    const response = await api.post(`${API_BASE_URL}/teacher-voice-clips/upload/`, formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+    });
+    return response.data;
+  } catch (error) {
+    console.error('Error uploading teacher voice clip:', error);
+    throw error;
+  }
+};
+
+export const getTeacherVoiceClips = async () => {
+  try {
+    const response = await api.get(`${API_BASE_URL}/teacher-voice-clips/`);
+    return response.data;
+  } catch (error) {
+    console.error('Error fetching teacher voice clips:', error);
+    throw error;
+  }
+};
+
+
+// Exam Remarks API
+export const addExamRemark = async (examTestId: string, formData: FormData) => {
+  try {
+    const response = await api.post(`/exam-test/${examTestId}/remarks/add/`, formData);
+    return response.data;
+  } catch (error) {
+    console.error('Error adding exam remark:', error);
+    throw error;
+  }
+};
+
+export const getExamRemarks = async (examTestId: string) => {
+  try {
+    const response = await api.get(`/exam-test/${examTestId}/remarks/`);
+    return response.data;
+  } catch (error) {
+    console.error('Error fetching exam remarks:', error);
     throw error;
   }
 };

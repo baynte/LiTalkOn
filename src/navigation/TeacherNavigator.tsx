@@ -13,12 +13,14 @@ import ExamTestListScreen from '../screens/teacher/ExamTestListScreen';
 import CreateExamTestScreen from '../screens/teacher/CreateExamTestScreen';
 import EditExamTestScreen from '../screens/teacher/EditExamTestScreen';
 import StudentRankingsScreen from '../screens/teacher/StudentRankingsScreen';
+import TeacherVoiceClipsScreen from '../screens/teacher/TeacherVoiceClipsScreen';
 
 // Define the parameter lists for each navigator
 export type TeacherTabParamList = {
   Dashboard: undefined;
   PracticeTests: undefined;
   ExamTests: undefined;
+  VoiceClips: undefined;
   Rankings: undefined;
 };
 
@@ -102,6 +104,8 @@ const TeacherNavigator = () => {
             iconName = focused ? 'book-open-variant' : 'book-open-outline';
           } else if (route.name === 'ExamTests') {
             iconName = focused ? 'clipboard-text' : 'clipboard-text-outline';
+          } else if (route.name === 'VoiceClips') {
+            iconName = focused ? 'microphone' : 'microphone-outline';
           } else if (route.name === 'Rankings') {
             iconName = focused ? 'trophy' : 'trophy-outline';
           }
@@ -133,6 +137,11 @@ const TeacherNavigator = () => {
         name="ExamTests" 
         component={ExamTestNavigator} 
         options={{ title: 'Exam Tests', headerShown: false }}
+      />
+      <Tab.Screen 
+        name="VoiceClips" 
+        component={TeacherVoiceClipsScreen} 
+        options={{ title: 'Voice Clips' }}
       />
       <Tab.Screen 
         name="Rankings" 

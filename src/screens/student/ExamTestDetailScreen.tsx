@@ -11,11 +11,13 @@ import {
   Modal,
 } from 'react-native';
 import { useTheme } from '../../theme/ThemeProvider';
-import { getExamTestById, getVoiceClipById, analyzeVoiceComparison } from '../../services/api';
+import { getExamTestById, getVoiceClipById, analyzeVoiceComparison, getExamRemarks } from '../../services/api';
 import { ExamTest, VoiceClip, VoiceAnalysisResult } from '../../types';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import AudioRecorder from '../../components/AudioRecorder';
 import AudioPlayer from '../../components/AudioPlayer';
+import ExamRemarkList from '../../components/ExamRemarkList';
+import { ExamRemark } from '../../components/ExamRemarkList';
 
 interface ExamTestDetailScreenProps {
   navigation: any;
@@ -40,6 +42,10 @@ const ExamTestDetailScreen: React.FC<ExamTestDetailScreenProps> = ({ navigation,
   const [showConfirmModal, setShowConfirmModal] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [showRemarkTab, setShowRemarkTab] = useState(false);
+  const [remarks, setRemarks] = useState<ExamRemark[]>([]);
+  const [isLoadingRemarks, setIsLoadingRemarks] = useState(false);
+  const [remarksError, setRemarksError] = useState<string | null>(null);
 
   // Load exam test and voice clips
   useEffect(() => {
@@ -98,6 +104,30 @@ const ExamTestDetailScreen: React.FC<ExamTestDetailScreenProps> = ({ navigation,
       };
     }
   }, [isExamStarted, timeRemaining, isExamCompleted]);
+
+  // Load exam remarks
+  useEffect(() => {
+    if (showRemarkTab && testId) {
+      loadRemarks();
+    }
+  }, [showRemarkTab, testId]);
+
+  const loadRemarks = async () => {
+    if (!testId) return;
+    
+    setIsLoadingRemarks(true);
+    setRemarksError(null);
+    
+    try {
+      const fetchedRemarks = await getExamRemarks(testId);
+      setRemarks(fetchedRemarks);
+    } catch (error: any) {
+      console.error('Error loading remarks:', error);
+      setRemarksError(error.message || 'Failed to load remarks');
+    } finally {
+      setIsLoadingRemarks(false);
+    }
+  };
 
   // Format time as MM:SS
   const formatTime = (seconds: number | null) => {
@@ -370,28 +400,73 @@ const ExamTestDetailScreen: React.FC<ExamTestDetailScreenProps> = ({ navigation,
         </View>
       </View>
       
-      {!isExamStarted && !isExamCompleted ? (
-        <View style={[styles.startContainer, { backgroundColor: colors.card, borderColor: colors.border }]}>
-          <Text style={[styles.startTitle, { color: colors.text }]}>Ready to Start?</Text>
-          <Text style={[styles.startDescription, { color: colors.textSecondary }]}>
-            This exam contains {voiceClips.length} voice clips that you will need to record.
-            {examTest.timeLimit ? ` You will have ${examTest.timeLimit} minutes to complete the exam.` : ''}
-          </Text>
-          <Text style={[styles.startWarning, { color: colors.warning }]}>
-            Once started, you cannot pause or restart the exam.
-          </Text>
-          
-          <TouchableOpacity
-            style={[styles.startButton, { backgroundColor: colors.primary }]}
-            onPress={handleStartExam}
+      {/* Tabs */}
+      <View style={styles.tabContainer}>
+        <TouchableOpacity
+          style={[
+            styles.tab,
+            !showRemarkTab && { backgroundColor: colors.primary },
+          ]}
+          onPress={() => setShowRemarkTab(false)}
+        >
+          <Text
+            style={[
+              styles.tabText,
+              { color: showRemarkTab ? colors.text : '#FFFFFF' },
+            ]}
           >
-            <Text style={[styles.startButtonText, { color: '#FFFFFF' }]}>Start Exam</Text>
-          </TouchableOpacity>
-        </View>
-      ) : isExamStarted && !isExamCompleted ? (
-        renderCurrentClip()
+            Exam
+          </Text>
+        </TouchableOpacity>
+        <TouchableOpacity
+          style={[
+            styles.tab,
+            showRemarkTab && { backgroundColor: colors.primary },
+          ]}
+          onPress={() => setShowRemarkTab(true)}
+        >
+          <Text
+            style={[
+              styles.tabText,
+              { color: !showRemarkTab ? colors.text : '#FFFFFF' },
+            ]}
+          >
+            Teacher Remarks
+          </Text>
+        </TouchableOpacity>
+      </View>
+
+      {showRemarkTab ? (
+        <ExamRemarkList
+          remarks={remarks}
+          isLoading={isLoadingRemarks}
+          error={remarksError}
+          isTeacher={false}
+        />
       ) : (
-        renderResults()
+        !isExamStarted && !isExamCompleted ? (
+          <View style={[styles.startContainer, { backgroundColor: colors.card, borderColor: colors.border }]}>
+            <Text style={[styles.startTitle, { color: colors.text }]}>Ready to Start?</Text>
+            <Text style={[styles.startDescription, { color: colors.textSecondary }]}>
+              This exam contains {voiceClips.length} voice clips that you will need to record.
+              {examTest.timeLimit ? ` You will have ${examTest.timeLimit} minutes to complete the exam.` : ''}
+            </Text>
+            <Text style={[styles.startWarning, { color: colors.warning }]}>
+              Once started, you cannot pause or restart the exam.
+            </Text>
+            
+            <TouchableOpacity
+              style={[styles.startButton, { backgroundColor: colors.primary }]}
+              onPress={handleStartExam}
+            >
+              <Text style={[styles.startButtonText, { color: '#FFFFFF' }]}>Start Exam</Text>
+            </TouchableOpacity>
+          </View>
+        ) : isExamStarted && !isExamCompleted ? (
+          renderCurrentClip()
+        ) : (
+          renderResults()
+        )
       )}
       
       {/* Confirmation Modal */}
@@ -651,6 +726,21 @@ const styles = StyleSheet.create({
   },
   buttonText: {
     fontSize: 16,
+    fontWeight: 'bold',
+  },
+  tabContainer: {
+    flexDirection: 'row',
+    marginBottom: 16,
+    padding: 8,
+  },
+  tab: {
+    flex: 1,
+    padding: 12,
+    alignItems: 'center',
+    borderRadius: 8,
+    marginHorizontal: 4,
+  },
+  tabText: {
     fontWeight: 'bold',
   },
 });

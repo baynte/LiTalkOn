@@ -134,7 +134,7 @@ const CreateExamTestScreen: React.FC<CreateExamTestScreenProps> = ({ navigation 
         onPress={() => toggleClipSelection(item.id)}
       >
         <View style={styles.clipInfo}>
-          <Text style={[styles.clipTitle, { color: colors.text }]}>{item.name}</Text>
+          <Text style={[styles.clipTitle, { color: colors.text }]}>{item.title}</Text>
           <Text style={[styles.clipDescription, { color: colors.textSecondary }]}>
             {item.description}
           </Text>

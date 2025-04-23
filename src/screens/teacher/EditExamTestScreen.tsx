@@ -10,21 +10,25 @@ import {
   Alert,
   FlatList,
   Switch,
+  Modal,
 } from 'react-native';
 import { useTheme } from '../../theme/ThemeProvider';
-import { fetchVoiceClips, getExamTestById, updateExamTest } from '../../services/api';
+import { fetchVoiceClips, getExamTestById, updateExamTest, getExamRemarks, addExamRemark } from '../../services/api';
 import { VoiceClip, ExamTest } from '../../types';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
+import ExamRemarkList from '../../components/ExamRemarkList';
+import ExamRemarkRecorder from '../../components/ExamRemarkRecorder';
+import { ExamRemark } from '../../components/ExamRemarkList';
 
 interface EditExamTestScreenProps {
-  navigation: any;
   route: any;
+  navigation: any;
 }
 
-const EditExamTestScreen: React.FC<EditExamTestScreenProps> = ({ navigation, route }) => {
-  const { examId } = route.params;
+const EditExamTestScreen: React.FC<EditExamTestScreenProps> = ({ route, navigation }) => {
   const theme = useTheme();
   const { colors, spacing, borderRadius } = theme;
+  const { examId } = route.params || {};
 
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
@@ -35,6 +39,12 @@ const EditExamTestScreen: React.FC<EditExamTestScreenProps> = ({ navigation, rou
   const [isLoading, setIsLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [showRemarkTab, setShowRemarkTab] = useState(false);
+  const [remarks, setRemarks] = useState<ExamRemark[]>([]);
+  const [isLoadingRemarks, setIsLoadingRemarks] = useState(false);
+  const [remarksError, setRemarksError] = useState<string | null>(null);
+  const [showRemarkRecorder, setShowRemarkRecorder] = useState(false);
+  const [isSubmittingRemark, setIsSubmittingRemark] = useState(false);
 
   // Load exam test and voice clips
   useEffect(() => {
@@ -43,21 +53,23 @@ const EditExamTestScreen: React.FC<EditExamTestScreenProps> = ({ navigation, rou
       setError(null);
       
       try {
-        // Fetch exam test and voice clips in parallel
-        const [examTest, clips] = await Promise.all([
-          getExamTestById(examId),
-          fetchVoiceClips()
-        ]);
-        
-        // Set form data
-        setName(examTest.name);
-        setDescription(examTest.description);
-        setSelectedClipIds(examTest.voiceClipIds);
-        setHasTimeLimit(!!examTest.timeLimit);
-        if (examTest.timeLimit) {
-          setTimeLimit(examTest.timeLimit.toString());
-        }
+        // Load voice clips
+        const clips = await fetchVoiceClips();
         setVoiceClips(clips);
+        
+        // Load exam test details
+        if (examId) {
+          const examTest = await getExamTestById(examId);
+          
+          setName(examTest.name);
+          setDescription(examTest.description || '');
+          setSelectedClipIds(examTest.voiceClipIds || []);
+          
+          if (examTest.timeLimit) {
+            setHasTimeLimit(true);
+            setTimeLimit(examTest.timeLimit.toString());
+          }
+        }
       } catch (err: any) {
         console.error('Error loading data:', err);
         setError(err.message || 'Failed to load data');
@@ -68,6 +80,30 @@ const EditExamTestScreen: React.FC<EditExamTestScreenProps> = ({ navigation, rou
     
     loadData();
   }, [examId]);
+
+  // Load exam remarks
+  useEffect(() => {
+    if (showRemarkTab && examId) {
+      loadRemarks();
+    }
+  }, [showRemarkTab, examId]);
+
+  const loadRemarks = async () => {
+    if (!examId) return;
+    
+    setIsLoadingRemarks(true);
+    setRemarksError(null);
+    
+    try {
+      const fetchedRemarks = await getExamRemarks(examId);
+      setRemarks(fetchedRemarks);
+    } catch (error: any) {
+      console.error('Error loading remarks:', error);
+      setRemarksError(error.message || 'Failed to load remarks');
+    } finally {
+      setIsLoadingRemarks(false);
+    }
+  };
 
   // Toggle voice clip selection
   const toggleClipSelection = (clipId: string) => {
@@ -133,6 +169,40 @@ const EditExamTestScreen: React.FC<EditExamTestScreenProps> = ({ navigation, rou
     }
   };
 
+  const handleSaveRemark = async (content: string, audioFile: any) => {
+    if (!examId) return;
+    
+    setIsSubmittingRemark(true);
+    
+    try {
+      // Create form data
+      const formData = new FormData();
+      if (content) {
+        formData.append('content', content);
+      }
+      if (audioFile) {
+        formData.append('audioFile', audioFile);
+      }
+      
+      // Upload the remark
+      await addExamRemark(examId, formData);
+      
+      // Close recorder modal
+      setShowRemarkRecorder(false);
+      
+      // Reload remarks
+      await loadRemarks();
+      
+      // Show success message
+      Alert.alert('Success', 'Remark added successfully');
+    } catch (error: any) {
+      console.error('Error adding remark:', error);
+      Alert.alert('Error', error.message || 'Failed to add remark');
+    } finally {
+      setIsSubmittingRemark(false);
+    }
+  };
+
   // Render voice clip item
   const renderVoiceClipItem = ({ item }: { item: VoiceClip }) => {
     const isSelected = selectedClipIds.includes(item.id);
@@ -149,7 +219,7 @@ const EditExamTestScreen: React.FC<EditExamTestScreenProps> = ({ navigation, rou
         onPress={() => toggleClipSelection(item.id)}
       >
         <View style={styles.clipInfo}>
-          <Text style={[styles.clipTitle, { color: colors.text }]}>{item.name}</Text>
+          <Text style={[styles.clipTitle, { color: colors.text }]}>{item.title}</Text>
           <Text style={[styles.clipDescription, { color: colors.textSecondary }]}>
             {item.description}
           </Text>
@@ -165,6 +235,7 @@ const EditExamTestScreen: React.FC<EditExamTestScreenProps> = ({ navigation, rou
     );
   };
 
+  // Render loading state
   if (isLoading) {
     return (
       <View style={[styles.container, { backgroundColor: colors.background }]}>
@@ -173,6 +244,7 @@ const EditExamTestScreen: React.FC<EditExamTestScreenProps> = ({ navigation, rou
     );
   }
 
+  // Render error state
   if (error && !voiceClips.length) {
     return (
       <View style={[styles.container, { backgroundColor: colors.background }]}>
@@ -189,141 +261,187 @@ const EditExamTestScreen: React.FC<EditExamTestScreenProps> = ({ navigation, rou
   }
 
   return (
-    <ScrollView 
-      style={[styles.container, { backgroundColor: colors.background }]}
-      contentContainerStyle={styles.contentContainer}
-    >
-      <View style={styles.header}>
-        <Text style={[styles.title, { color: colors.text }]}>Edit Exam Test</Text>
+    <View style={[styles.container, { backgroundColor: colors.background }]}>
+      {/* Tabs */}
+      <View style={styles.tabContainer}>
+        <TouchableOpacity
+          style={[
+            styles.tab,
+            !showRemarkTab && { backgroundColor: colors.primary },
+          ]}
+          onPress={() => setShowRemarkTab(false)}
+        >
+          <Text
+            style={[
+              styles.tabText,
+              { color: showRemarkTab ? colors.text : '#FFFFFF' },
+            ]}
+          >
+            Test Details
+          </Text>
+        </TouchableOpacity>
+        <TouchableOpacity
+          style={[
+            styles.tab,
+            showRemarkTab && { backgroundColor: colors.primary },
+          ]}
+          onPress={() => setShowRemarkTab(true)}
+        >
+          <Text
+            style={[
+              styles.tabText,
+              { color: !showRemarkTab ? colors.text : '#FFFFFF' },
+            ]}
+          >
+            Remarks
+          </Text>
+        </TouchableOpacity>
       </View>
-      
-      {/* Form */}
-      <View style={styles.form}>
-        <View style={styles.formGroup}>
-          <Text style={[styles.label, { color: colors.text }]}>Name *</Text>
-          <TextInput
-            style={[
-              styles.input,
-              {
-                backgroundColor: colors.card,
-                borderColor: colors.border,
-                color: colors.text,
-              },
-            ]}
-            placeholder="Enter exam test name"
-            placeholderTextColor={colors.textSecondary}
-            value={name}
-            onChangeText={setName}
-          />
-        </View>
-        
-        <View style={styles.formGroup}>
-          <Text style={[styles.label, { color: colors.text }]}>Description</Text>
-          <TextInput
-            style={[
-              styles.textArea,
-              {
-                backgroundColor: colors.card,
-                borderColor: colors.border,
-                color: colors.text,
-              },
-            ]}
-            placeholder="Enter exam test description"
-            placeholderTextColor={colors.textSecondary}
-            value={description}
-            onChangeText={setDescription}
-            multiline
-            numberOfLines={4}
-            textAlignVertical="top"
-          />
-        </View>
-        
-        <View style={styles.formGroup}>
-          <View style={styles.switchContainer}>
-            <Text style={[styles.label, { color: colors.text }]}>Time Limit</Text>
-            <Switch
-              value={hasTimeLimit}
-              onValueChange={setHasTimeLimit}
-              trackColor={{ false: colors.border, true: colors.primaryLight }}
-              thumbColor={hasTimeLimit ? colors.primary : colors.textSecondary}
-            />
+
+      {showRemarkTab ? (
+        <ExamRemarkList
+          remarks={remarks}
+          isLoading={isLoadingRemarks}
+          error={remarksError}
+          onAddRemark={() => setShowRemarkRecorder(true)}
+          isTeacher={true}
+        />
+      ) : (
+        <ScrollView contentContainerStyle={styles.contentContainer}>
+          <View style={styles.header}>
+            <Text style={[styles.title, { color: colors.text }]}>Edit Exam Test</Text>
           </View>
           
-          {hasTimeLimit && (
-            <View style={styles.timeLimitContainer}>
+          {/* Form */}
+          <View style={styles.form}>
+            <View style={styles.formGroup}>
+              <Text style={[styles.label, { color: colors.text }]}>Name *</Text>
               <TextInput
                 style={[
-                  styles.timeLimitInput,
+                  styles.input,
                   {
                     backgroundColor: colors.card,
                     borderColor: colors.border,
                     color: colors.text,
                   },
                 ]}
-                placeholder="Enter time limit"
+                placeholder="Enter exam test name"
                 placeholderTextColor={colors.textSecondary}
-                value={timeLimit}
-                onChangeText={handleTimeLimitChange}
-                keyboardType="numeric"
+                value={name}
+                onChangeText={setName}
               />
-              <Text style={[styles.timeLimitUnit, { color: colors.text }]}>minutes</Text>
             </View>
-          )}
-        </View>
-        
-        <View style={styles.formGroup}>
-          <Text style={[styles.label, { color: colors.text }]}>
-            Select Voice Clips * ({selectedClipIds.length} selected)
-          </Text>
-          
-          {voiceClips.length === 0 ? (
-            <View style={styles.emptyContainer}>
-              <Icon name="microphone-off" size={40} color={colors.textSecondary} />
-              <Text style={[styles.emptyText, { color: colors.textSecondary }]}>
-                No voice clips available
+            
+            <View style={styles.formGroup}>
+              <Text style={[styles.label, { color: colors.text }]}>Description</Text>
+              <TextInput
+                style={[
+                  styles.textArea,
+                  {
+                    backgroundColor: colors.card,
+                    borderColor: colors.border,
+                    color: colors.text,
+                  },
+                ]}
+                placeholder="Enter exam test description"
+                placeholderTextColor={colors.textSecondary}
+                value={description}
+                onChangeText={setDescription}
+                multiline
+                numberOfLines={4}
+                textAlignVertical="top"
+              />
+            </View>
+            
+            <View style={styles.formGroup}>
+              <View style={styles.switchContainer}>
+                <Text style={[styles.label, { color: colors.text }]}>Time Limit</Text>
+                <Switch
+                  value={hasTimeLimit}
+                  onValueChange={setHasTimeLimit}
+                  trackColor={{ false: colors.border, true: colors.primaryLight }}
+                  thumbColor={hasTimeLimit ? colors.primary : colors.textSecondary}
+                />
+              </View>
+              
+              {hasTimeLimit && (
+                <View style={styles.timeLimitContainer}>
+                  <TextInput
+                    style={[
+                      styles.timeLimitInput,
+                      {
+                        backgroundColor: colors.card,
+                        borderColor: colors.border,
+                        color: colors.text,
+                      },
+                    ]}
+                    placeholder="Enter time limit"
+                    placeholderTextColor={colors.textSecondary}
+                    value={timeLimit}
+                    onChangeText={handleTimeLimitChange}
+                    keyboardType="numeric"
+                  />
+                  <Text style={[styles.timeLimitLabel, { color: colors.text }]}>minutes</Text>
+                </View>
+              )}
+            </View>
+            
+            <View style={styles.formGroup}>
+              <Text style={[styles.label, { color: colors.text }]}>Voice Clips *</Text>
+              <Text style={[styles.subtitle, { color: colors.textSecondary }]}>
+                Select one or more voice clips for this exam test
               </Text>
+              
+              <FlatList
+                data={voiceClips}
+                renderItem={renderVoiceClipItem}
+                keyExtractor={(item) => item.id}
+                style={styles.clipsList}
+                scrollEnabled={false}
+              />
             </View>
-          ) : (
-            <FlatList
-              data={voiceClips}
-              renderItem={renderVoiceClipItem}
-              keyExtractor={(item) => item.id}
-              scrollEnabled={false}
-              style={styles.clipsList}
-            />
-          )}
+            
+            <View style={styles.buttonContainer}>
+              <TouchableOpacity
+                style={[styles.cancelButton, { borderColor: colors.border }]}
+                onPress={() => navigation.goBack()}
+                disabled={isSubmitting}
+              >
+                <Text style={[styles.cancelButtonText, { color: colors.text }]}>Cancel</Text>
+              </TouchableOpacity>
+              
+              <TouchableOpacity
+                style={[styles.saveButton, { backgroundColor: colors.primary }]}
+                onPress={handleUpdateExamTest}
+                disabled={isSubmitting}
+              >
+                {isSubmitting ? (
+                  <ActivityIndicator size="small" color="#FFFFFF" />
+                ) : (
+                  <Text style={[styles.saveButtonText, { color: '#FFFFFF' }]}>Save Changes</Text>
+                )}
+              </TouchableOpacity>
+            </View>
+          </View>
+        </ScrollView>
+      )}
+
+      {/* Remark Recorder Modal */}
+      <Modal
+        visible={showRemarkRecorder}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setShowRemarkRecorder(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <ExamRemarkRecorder
+            onSaveRemark={handleSaveRemark}
+            onCancel={() => setShowRemarkRecorder(false)}
+            isSubmitting={isSubmittingRemark}
+          />
         </View>
-      </View>
-      
-      {/* Actions */}
-      <View style={styles.actions}>
-        <TouchableOpacity
-          style={[styles.cancelButton, { borderColor: colors.border }]}
-          onPress={() => navigation.goBack()}
-          disabled={isSubmitting}
-        >
-          <Text style={[styles.cancelButtonText, { color: colors.text }]}>Cancel</Text>
-        </TouchableOpacity>
-        
-        <TouchableOpacity
-          style={[
-            styles.updateButton,
-            { backgroundColor: colors.primary },
-            (isSubmitting || selectedClipIds.length === 0 || !name.trim() ||
-              (hasTimeLimit && (!timeLimit || parseInt(timeLimit) <= 0))) && styles.disabledButton,
-          ]}
-          onPress={handleUpdateExamTest}
-          disabled={isSubmitting || selectedClipIds.length === 0 || !name.trim() ||
-            (hasTimeLimit && (!timeLimit || parseInt(timeLimit) <= 0))}
-        >
-          {isSubmitting ? (
-            <ActivityIndicator size="small" color="#FFFFFF" />
-          ) : (
-            <Text style={[styles.updateButtonText, { color: '#FFFFFF' }]}>Update Test</Text>
-          )}
-        </TouchableOpacity>
-      </View>
-    </ScrollView>
+      </Modal>
+    </View>
   );
 };
 
@@ -335,21 +453,24 @@ const styles = StyleSheet.create({
     padding: 16,
   },
   header: {
-    marginBottom: 24,
+    marginBottom: 16,
   },
   title: {
     fontSize: 24,
     fontWeight: 'bold',
   },
   form: {
-    marginBottom: 24,
+    gap: 20,
   },
   formGroup: {
-    marginBottom: 16,
+    gap: 8,
   },
   label: {
     fontSize: 16,
-    fontWeight: 'bold',
+    fontWeight: '500',
+  },
+  subtitle: {
+    fontSize: 14,
     marginBottom: 8,
   },
   input: {
@@ -357,36 +478,34 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderRadius: 8,
     paddingHorizontal: 12,
-    fontSize: 16,
   },
   textArea: {
     borderWidth: 1,
     borderRadius: 8,
     paddingHorizontal: 12,
-    paddingVertical: 8,
-    fontSize: 16,
+    paddingTop: 12,
     minHeight: 100,
   },
   switchContainer: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 8,
   },
   timeLimitContainer: {
     flexDirection: 'row',
     alignItems: 'center',
+    gap: 8,
+    marginTop: 8,
   },
   timeLimitInput: {
+    width: 80,
     height: 48,
     borderWidth: 1,
     borderRadius: 8,
     paddingHorizontal: 12,
-    fontSize: 16,
-    flex: 1,
+    textAlign: 'center',
   },
-  timeLimitUnit: {
-    marginLeft: 8,
+  timeLimitLabel: {
     fontSize: 16,
   },
   clipsList: {
@@ -394,6 +513,7 @@ const styles = StyleSheet.create({
   },
   clipItem: {
     flexDirection: 'row',
+    alignItems: 'center',
     padding: 12,
     borderRadius: 8,
     borderWidth: 1,
@@ -404,19 +524,19 @@ const styles = StyleSheet.create({
   },
   clipTitle: {
     fontSize: 16,
-    fontWeight: 'bold',
-    marginBottom: 4,
+    fontWeight: '500',
   },
   clipDescription: {
     fontSize: 14,
+    marginTop: 4,
   },
   checkboxContainer: {
-    justifyContent: 'center',
     marginLeft: 8,
   },
-  actions: {
+  buttonContainer: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
+    marginTop: 20,
+    gap: 12,
   },
   cancelButton: {
     flex: 1,
@@ -425,38 +545,21 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     justifyContent: 'center',
     alignItems: 'center',
-    marginRight: 8,
   },
   cancelButtonText: {
     fontSize: 16,
-    fontWeight: 'bold',
+    fontWeight: '500',
   },
-  updateButton: {
+  saveButton: {
     flex: 2,
     height: 48,
     borderRadius: 8,
     justifyContent: 'center',
     alignItems: 'center',
-    marginLeft: 8,
   },
-  updateButtonText: {
+  saveButtonText: {
     fontSize: 16,
-    fontWeight: 'bold',
-  },
-  disabledButton: {
-    opacity: 0.5,
-  },
-  emptyContainer: {
-    alignItems: 'center',
-    padding: 24,
-    borderRadius: 8,
-    borderWidth: 1,
-    borderStyle: 'dashed',
-  },
-  emptyText: {
-    fontSize: 16,
-    marginTop: 8,
-    textAlign: 'center',
+    fontWeight: '500',
   },
   errorText: {
     marginTop: 16,
@@ -465,13 +568,33 @@ const styles = StyleSheet.create({
   },
   button: {
     marginTop: 16,
-    paddingVertical: 12,
-    paddingHorizontal: 24,
+    padding: 12,
     borderRadius: 8,
+    alignItems: 'center',
   },
   buttonText: {
     fontSize: 16,
+    fontWeight: '500',
+  },
+  tabContainer: {
+    flexDirection: 'row',
+    marginBottom: 16,
+    padding: 8,
+  },
+  tab: {
+    flex: 1,
+    padding: 12,
+    alignItems: 'center',
+    borderRadius: 8,
+    marginHorizontal: 4,
+  },
+  tabText: {
     fontWeight: 'bold',
+  },
+  modalOverlay: {
+    flex: 1,
+    justifyContent: 'center',
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
   },
 });
 

@@ -193,6 +193,16 @@ const TeacherDashboardScreen: React.FC<TeacherDashboardScreenProps> = ({ navigat
             <Text style={[styles.actionText, { color: '#FFFFFF' }]}>New Exam Test</Text>
           </TouchableOpacity>
         </View>
+        
+        <View style={[styles.actionsContainer, { marginTop: 8 }]}>
+          <TouchableOpacity 
+            style={[styles.actionButton, { backgroundColor: '#8e44ad' }]}
+            onPress={() => navigation.navigate('VoiceClips')}
+          >
+            <Icon name="microphone" size={20} color="#FFFFFF" />
+            <Text style={[styles.actionText, { color: '#FFFFFF' }]}>Manage Voice Clips</Text>
+          </TouchableOpacity>
+        </View>
       </View>
     </ScrollView>
   );

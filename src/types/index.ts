@@ -1,5 +1,6 @@
 export interface VoiceClip {
   id: string;
+  title: string;
   name: string;
   description: string;
   audioUrl: string;
