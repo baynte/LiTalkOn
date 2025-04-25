@@ -178,15 +178,29 @@ const EditExamTestScreen: React.FC<EditExamTestScreenProps> = ({ route, navigati
       // Create form data
       const formData = new FormData();
       if (content) {
-        formData.append('content', content);
+        formData.append('remark', content);
       }
       if (audioFile) {
-        formData.append('audioFile', audioFile);
+        // Ensure all required properties for React Native file objects
+        formData.append('audio_file', {
+          uri: audioFile.uri,
+          type: audioFile.type || 'audio/mp3',
+          name: audioFile.name || `remark_${Date.now()}.mp3`,
+        });
+      }
+      
+      // Debug logging to see what's being sent
+      console.log('FormData parts:');
+      // @ts-ignore - _parts is not in FormData type but exists in React Native
+      if (formData._parts) {
+        // @ts-ignore
+        formData._parts.forEach((part: any) => {
+          console.log(`Key: ${part[0]}, Value:`, part[1]);
+        });
       }
       
       // Upload the remark
       await addExamRemark(examId, formData);
-      
       // Close recorder modal
       setShowRemarkRecorder(false);
       

@@ -615,7 +615,15 @@ export const getTeacherVoiceClips = async () => {
 // Exam Remarks API
 export const addExamRemark = async (examTestId: string, formData: FormData) => {
   try {
-    const response = await api.post(`/exam-test/${examTestId}/remarks/add/`, formData);
+    const response = await api.post(
+      `/exam-test/${examTestId}/remarks/add/`, 
+      formData,
+      {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        }
+      }
+    );
     return response.data;
   } catch (error) {
     console.error('Error adding exam remark:', error);
@@ -626,7 +634,7 @@ export const addExamRemark = async (examTestId: string, formData: FormData) => {
 export const getExamRemarks = async (examTestId: string) => {
   try {
     const response = await api.get(`/exam-test/${examTestId}/remarks/`);
-    return response.data;
+    return response.data.remarks;
   } catch (error) {
     console.error('Error fetching exam remarks:', error);
     throw error;

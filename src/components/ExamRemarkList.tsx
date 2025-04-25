@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -6,16 +6,18 @@ import {
   StyleSheet,
   ScrollView,
   ActivityIndicator,
+  Alert,
 } from 'react-native';
 import { useTheme } from '../theme/ThemeProvider';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import Sound from 'react-native-sound';
+import { API_BASE_URL } from '../services/api';
 
 export interface ExamRemark {
   id: string;
   exam_test_id: string;
   teacher_id: string;
-  content: string;
+  remark: string;
   audioUrl: string | null;
   created_at: string;
 }
@@ -42,6 +44,19 @@ const ExamRemarkList: React.FC<ExamRemarkListProps> = ({
   const [sound, setSound] = useState<Sound | null>(null);
   const [isLoadingAudio, setIsLoadingAudio] = useState(false);
 
+  // Log received remarks for debugging
+  useEffect(() => {
+    if (remarks && remarks.length > 0) {
+      console.log(`Received ${remarks.length} remarks`);
+      remarks.forEach(remark => {
+        console.log(`Remark ID: ${remark.id}, Has audio: ${Boolean(remark.audioUrl)}`, remark);
+        if (remark.audioUrl) {
+          console.log(`Audio URL: ${remark.audioUrl}`);
+        }
+      });
+    }
+  }, [remarks]);
+
   // Function to play audio
   const playAudio = (audioUrl: string, remarkId: string) => {
     // Stop any currently playing audio
@@ -51,16 +66,34 @@ const ExamRemarkList: React.FC<ExamRemarkListProps> = ({
       setSound(null);
     }
     
+    if (!audioUrl) {
+      Alert.alert('Error', 'Audio URL is missing or invalid');
+      return;
+    }
+    
     setPlayingAudioId(remarkId);
     setIsLoadingAudio(true);
     
+    // Format the audio URL correctly - ensure it's a complete URL
+    let fullAudioUrl = audioUrl;
+    
+    // If it's a relative URL, prepend the API base URL
+    if (audioUrl && !audioUrl.startsWith('http') && !audioUrl.startsWith('file://')) {
+      // Remove leading slash if present to avoid double slashes
+      const cleanPath = audioUrl.startsWith('/') ? audioUrl.substring(1) : audioUrl;
+      fullAudioUrl = `${API_BASE_URL}/${cleanPath}`;
+    }
+    
+    console.log('Playing audio from URL:', fullAudioUrl);
+    
     // Load and play the new audio
-    const newSound = new Sound(audioUrl, '', (error) => {
+    const newSound = new Sound(fullAudioUrl, '', (error) => {
       setIsLoadingAudio(false);
       
       if (error) {
         console.error('Error loading sound:', error);
         setPlayingAudioId(null);
+        Alert.alert('Playback Error', 'Could not play the audio. Please try again later.');
         return;
       }
       
@@ -71,6 +104,7 @@ const ExamRemarkList: React.FC<ExamRemarkListProps> = ({
           console.log('Successfully played the sound');
         } else {
           console.log('Playback failed due to audio decoding errors');
+          Alert.alert('Playback Error', 'Failed to play the audio due to decoding errors.');
         }
         setPlayingAudioId(null);
         newSound.release();
@@ -93,6 +127,17 @@ const ExamRemarkList: React.FC<ExamRemarkListProps> = ({
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
     return date.toLocaleDateString() + ' ' + date.toLocaleTimeString();
+  };
+
+  // Check if an audio URL is valid
+  const isValidAudioUrl = (url: string | null): boolean => {
+    if (!url) return false;
+    
+    // Check if it's an empty string or just whitespace
+    if (url.trim() === '') return false;
+    
+    // If it passes these checks, consider it valid
+    return true;
   };
 
   if (isLoading) {
@@ -149,14 +194,13 @@ const ExamRemarkList: React.FC<ExamRemarkListProps> = ({
                   {formatDate(remark.created_at)}
                 </Text>
               </View>
-              
-              {remark.content.trim() !== '' && (
+              {remark.remark && remark.remark.trim() !== '' && (
                 <Text style={[styles.remarkContent, { color: colors.text }]}>
-                  {remark.content}
+                  {remark.remark}
                 </Text>
               )}
               
-              {remark.audioUrl && (
+              {isValidAudioUrl(remark.audioUrl) && (
                 <View style={styles.audioContainer}>
                   {playingAudioId === remark.id ? (
                     <TouchableOpacity

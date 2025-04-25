@@ -7,6 +7,7 @@ import {
   TextInput,
   ActivityIndicator,
   Alert,
+  Platform,
 } from 'react-native';
 import { useTheme } from '../theme/ThemeProvider';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
@@ -56,10 +57,13 @@ const ExamRemarkRecorder: React.FC<ExamRemarkRecorderProps> = ({
       
       if (audioUri) {
         // Create a proper audio file object to pass to the parent component
+        // Ensure all required properties for FormData compatibility
         const file = {
           name: `remark_${Date.now()}.mp3`,
           type: 'audio/mp3',
-          uri: audioUri,
+          uri: Platform.OS === 'android' && !audioUri.startsWith('file://') 
+            ? `file://${audioUri}` // Ensure proper URI format for Android
+            : audioUri,
         };
         
         setAudioFile(file);
