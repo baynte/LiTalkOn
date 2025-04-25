@@ -13,7 +13,7 @@ import { useTheme } from '../../theme/ThemeProvider';
 import { getTeacherVoiceClips, uploadTeacherVoiceClip } from '../../services/api';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import TeacherVoiceRecorder from '../../components/TeacherVoiceRecorder';
-import Sound from 'react-native-sound';
+import { useAudio } from '../../hooks/useAudio';
 
 interface VoiceClip {
   id: string;
@@ -40,7 +40,13 @@ const TeacherVoiceClipsScreen: React.FC<TeacherVoiceClipsScreenProps> = ({ navig
   const [showRecorder, setShowRecorder] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
   const [playingClipId, setPlayingClipId] = useState<string | null>(null);
-  const [sound, setSound] = useState<Sound | null>(null);
+  
+  // Use the audio hook instead of direct Sound usage
+  const {
+    isPlaying,
+    playAudio,
+    stopPlaying,
+  } = useAudio();
 
   // Load voice clips
   const loadVoiceClips = async () => {
@@ -66,12 +72,9 @@ const TeacherVoiceClipsScreen: React.FC<TeacherVoiceClipsScreenProps> = ({ navig
   useEffect(() => {
     loadVoiceClips();
 
-    // Cleanup sound on unmount
+    // Cleanup on unmount
     return () => {
-      if (sound) {
-        sound.stop();
-        sound.release();
-      }
+      stopPlaying();
     };
   }, []);
 
@@ -119,47 +122,59 @@ const TeacherVoiceClipsScreen: React.FC<TeacherVoiceClipsScreenProps> = ({ navig
   };
 
   // Play audio
-  const playAudio = (audioUrl: string, clipId: string) => {
-    // Stop any currently playing audio
-    if (sound) {
-      sound.stop();
-      sound.release();
-      setSound(null);
+  const handlePlayAudio = (audioUrl: string, clipId: string) => {
+    // If already playing something, stop it
+    if (isPlaying) {
+      stopPlaying();
+      
+      // If clicking the same clip that's already playing, just stop it
+      if (playingClipId === clipId) {
+        setPlayingClipId(null);
+        return;
+      }
     }
     
     setPlayingClipId(clipId);
     
-    // Load and play the new audio
-    const newSound = new Sound(audioUrl, '', (error) => {
-      if (error) {
-        console.error('Error loading sound:', error);
-        setPlayingClipId(null);
-        return;
+    // Log the URL for debugging
+    console.log('Attempting to play audio URL:', audioUrl);
+    
+    // Check if the URL is valid before playing
+    if (!audioUrl) {
+      console.error('Invalid audio URL:', audioUrl);
+      Alert.alert('Error', 'Invalid audio URL');
+      setPlayingClipId(null);
+      return;
+    }
+    
+    // Try to normalize the URL if needed
+    let normalizedUrl = audioUrl;
+    
+    // If it's not a complete URL and doesn't start with file://, add base URL
+    if (!audioUrl.startsWith('http://') && !audioUrl.startsWith('https://') && !audioUrl.startsWith('file://')) {
+      // Check if it's a relative path from API
+      if (audioUrl.startsWith('/')) {
+        // Import API base URL from services/api
+        const { API_BASE_URL } = require('../../services/api');
+        normalizedUrl = `${API_BASE_URL.replace('/api', '')}${audioUrl}`;
+        console.log('Normalized URL:', normalizedUrl);
       }
-      
-      setSound(newSound);
-      
-      newSound.play((success) => {
-        if (success) {
-          console.log('Successfully played the sound');
-        } else {
-          console.log('Playback failed due to audio decoding errors');
-        }
-        setPlayingClipId(null);
-        newSound.release();
-        setSound(null);
-      });
-    });
+    }
+    
+    try {
+      // Play the audio with normalized URL
+      playAudio(normalizedUrl);
+    } catch (error) {
+      console.error('Error playing audio:', error);
+      Alert.alert('Playback Error', 'Could not play the audio file');
+      setPlayingClipId(null);
+    }
   };
 
   // Stop audio playback
-  const stopAudio = () => {
-    if (sound) {
-      sound.stop();
-      sound.release();
-      setSound(null);
-      setPlayingClipId(null);
-    }
+  const handleStopAudio = () => {
+    stopPlaying();
+    setPlayingClipId(null);
   };
 
   // Format date
@@ -199,7 +214,7 @@ const TeacherVoiceClipsScreen: React.FC<TeacherVoiceClipsScreenProps> = ({ navig
         {playingClipId === item.id ? (
           <TouchableOpacity
             style={[styles.playButton, { backgroundColor: colors.error }]}
-            onPress={stopAudio}
+            onPress={handleStopAudio}
           >
             <Icon name="stop" size={20} color="#FFFFFF" />
             <Text style={styles.playButtonText}>Stop</Text>
@@ -207,7 +222,7 @@ const TeacherVoiceClipsScreen: React.FC<TeacherVoiceClipsScreenProps> = ({ navig
         ) : (
           <TouchableOpacity
             style={[styles.playButton, { backgroundColor: colors.primary }]}
-            onPress={() => playAudio(item.audio_url, item.id)}
+            onPress={() => handlePlayAudio(item.audio_url, item.id)}
           >
             <Icon name="play" size={20} color="#FFFFFF" />
             <Text style={styles.playButtonText}>Play</Text>
