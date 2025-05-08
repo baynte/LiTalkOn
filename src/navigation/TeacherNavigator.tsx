@@ -14,6 +14,7 @@ import CreateExamTestScreen from '../screens/teacher/CreateExamTestScreen';
 import EditExamTestScreen from '../screens/teacher/EditExamTestScreen';
 import StudentRankingsScreen from '../screens/teacher/StudentRankingsScreen';
 import TeacherVoiceClipsScreen from '../screens/teacher/TeacherVoiceClipsScreen';
+import StudentTestScoresScreen from '../screens/teacher/StudentTestScoresScreen';
 
 // Define the parameter lists for each navigator
 export type TeacherTabParamList = {
@@ -33,7 +34,8 @@ export type TeacherPracticeTestStackParamList = {
 export type TeacherExamTestStackParamList = {
   ExamTestList: undefined;
   CreateExamTest: undefined;
-  EditExamTest: { testId: string };
+  EditExamTest: { examId: string };
+  StudentTestScores: { examId: string, examName: string };
 };
 
 // Create the navigators
@@ -82,6 +84,11 @@ const ExamTestNavigator = () => {
         name="EditExamTest" 
         component={EditExamTestScreen} 
         options={{ title: 'Edit Exam Test' }}
+      />
+      <ExamTestStack.Screen 
+        name="StudentTestScores" 
+        component={StudentTestScoresScreen} 
+        options={{ title: 'Student Test Scores' }}
       />
     </ExamTestStack.Navigator>
   );

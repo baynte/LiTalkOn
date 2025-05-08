@@ -82,6 +82,22 @@ export interface ExamTest {
   timeLimit?: number; // Optional time limit in minutes
 }
 
+// Student test score with audio recording
+export interface StudentTestScore {
+  id: string;
+  score: number;
+  test_id: string;
+  language_test_case_id: string;
+  title: string;
+  description: string;
+  transcript: string;
+  recognized_text?: string;
+  audioUrl?: string;        // Original test audio
+  userAudioUrl?: string;    // Student's recorded audio
+  created_at: string;
+  student_full_name: string;
+}
+
 // Student ranking type
 export interface StudentRanking {
   id: string;

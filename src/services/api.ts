@@ -1,5 +1,5 @@
 import axios, { AxiosRequestConfig, AxiosError, AxiosResponse } from 'axios';
-import { VoiceClip, VoiceAnalysisResult, PracticeTest, ExamTest, StudentRanking } from '../types';
+import { VoiceClip, VoiceAnalysisResult, PracticeTest, ExamTest, StudentRanking, StudentTestScore } from '../types';
 import { mockVoiceClips, mockAnalysisResult } from '../utils/mockData';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
@@ -582,6 +582,19 @@ export const getStudentRankingsByExamId = async (examId: string): Promise<Studen
     return response.data;
   } catch (error) {
     console.error(`Error fetching student rankings for exam ${examId}:`, error);
+    throw error;
+  }
+};
+
+// Get student test scores
+export const getStudentTestScores = async (testType: 0 | 1, testId: string): Promise<StudentTestScore[]> => {
+  try {
+    const response = await api.get('/student-score', {
+      params: { test_type: testType, test_id: testId }
+    });
+    return response.data;
+  } catch (error) {
+    console.error(`Error fetching student test scores for type ${testType}:`, error);
     throw error;
   }
 };

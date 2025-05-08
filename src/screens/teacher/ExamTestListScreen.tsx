@@ -134,6 +134,13 @@ const ExamTestListScreen: React.FC<ExamTestListScreenProps> = ({ navigation, rou
           </TouchableOpacity>
           
           <TouchableOpacity
+            style={[styles.actionButton, { backgroundColor: colors.success }]}
+            onPress={() => navigation.navigate('StudentTestScores', { examId: item.id, examName: item.name })}
+          >
+            <Icon name="account-voice" size={20} color="#FFFFFF" />
+          </TouchableOpacity>
+          
+          <TouchableOpacity
             style={[styles.actionButton, { backgroundColor: colors.error }]}
             onPress={() => handleDelete(item)}
           >
