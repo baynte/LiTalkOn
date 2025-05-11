@@ -653,3 +653,32 @@ export const getExamRemarks = async (examTestId: string) => {
     throw error;
   }
 };
+
+// Test Score Remarks API
+export const addTestScoreRemark = async (attemptId: string, formData: FormData) => {
+  try {
+    const response = await api.post(
+      `/student-score/attempt/${attemptId}/remarks/add/`, 
+      formData,
+      {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        }
+      }
+    );
+    return response.data;
+  } catch (error) {
+    console.error('Error adding test score remark:', error);
+    throw error;
+  }
+};
+
+export const getTestScoreRemarks = async (attemptId: string) => {
+  try {
+    const response = await api.get(`/student-score/attempt/${attemptId}/remarks/`);
+    return response.data.remarks;
+  } catch (error) {
+    console.error('Error fetching test score remarks:', error);
+    throw error;
+  }
+};

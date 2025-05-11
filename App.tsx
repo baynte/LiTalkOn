@@ -14,6 +14,8 @@ import { ActivityIndicator, View } from 'react-native';
 import { NavigationContainerRef, NavigationContainer, DefaultTheme } from '@react-navigation/native';
 import { RootStackParamList } from './src/navigation';
 import colors from './src/theme/colors';
+import { AuthProvider } from './src/contexts/AuthContext';
+import { GestureHandlerRootView } from 'react-native-gesture-handler';
 
 // Create a custom navigation theme
 const navigationTheme = {
@@ -65,13 +67,17 @@ function App(): React.JSX.Element {
   }
 
   return (
-    <ThemeProvider>
-      <SafeAreaProvider>
-        <NavigationContainer ref={navigationRef} theme={navigationTheme}>
-          <AppNavigator />
-        </NavigationContainer>
-      </SafeAreaProvider>
-    </ThemeProvider>
+    <GestureHandlerRootView style={{ flex: 1 }}>
+      <ThemeProvider>
+        <AuthProvider>
+          <SafeAreaProvider>
+            <NavigationContainer ref={navigationRef} theme={navigationTheme}>
+              <AppNavigator />
+            </NavigationContainer>
+          </SafeAreaProvider>
+        </AuthProvider>
+      </ThemeProvider>
+    </GestureHandlerRootView>
   );
 }
 

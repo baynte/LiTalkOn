@@ -370,6 +370,42 @@ const ExamTestDetailScreen: React.FC<ExamTestDetailScreenProps> = ({ navigation,
     );
   }
 
+  if (isExamCompleted) {
+    return (
+      <ScrollView
+        style={[styles.container, { backgroundColor: colors.background }]}
+        contentContainerStyle={styles.contentContainer}
+      >
+        <View style={styles.header}>
+          <Text style={[styles.title, { color: colors.text }]}>{examTest.name}</Text>
+          <Text style={[styles.description, { color: colors.textSecondary }]}>
+            {examTest.description}
+          </Text>
+        </View>
+        
+        {renderResults()}
+        
+        <TouchableOpacity
+          style={[styles.viewScoresButton, { backgroundColor: colors.primary }]}
+          onPress={() => navigation.navigate('MyTestScores', { examId: testId, examName: examTest.name })}
+        >
+          <Text style={styles.viewScoresButtonText}>View My Test Scores</Text>
+        </TouchableOpacity>
+        
+        {showRemarkTab && (
+          <View style={styles.remarksSection}>
+            <ExamRemarkList
+              remarks={remarks}
+              isLoading={isLoadingRemarks}
+              error={remarksError}
+              isTeacher={false}
+            />
+          </View>
+        )}
+      </ScrollView>
+    );
+  }
+
   return (
     <ScrollView 
       style={[styles.container, { backgroundColor: colors.background }]}
@@ -742,6 +778,25 @@ const styles = StyleSheet.create({
   },
   tabText: {
     fontWeight: 'bold',
+  },
+  viewScoresButton: {
+    backgroundColor: '#4CAF50',
+    paddingVertical: 12,
+    paddingHorizontal: 24,
+    borderRadius: 8,
+    alignItems: 'center',
+    marginBottom: 24,
+  },
+  viewScoresButtonText: {
+    color: '#FFFFFF',
+    fontSize: 16,
+    fontWeight: 'bold',
+  },
+  remarksSection: {
+    padding: 16,
+    borderRadius: 8,
+    borderWidth: 1,
+    marginBottom: 24,
   },
 });
 

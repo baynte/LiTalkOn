@@ -11,6 +11,7 @@ import PracticeTestDetailScreen from '../screens/student/PracticeTestDetailScree
 import ExamTestsScreen from '../screens/student/ExamTestsScreen';
 import ExamTestDetailScreen from '../screens/student/ExamTestDetailScreen';
 import StudentProfileScreen from '../screens/student/StudentProfileScreen';
+import MyTestScoresScreen from '../screens/student/MyTestScoresScreen';
 
 // Define the parameter lists for each navigator
 export type StudentTabParamList = {
@@ -28,6 +29,7 @@ export type StudentPracticeTestStackParamList = {
 export type StudentExamTestStackParamList = {
   ExamTestsList: undefined;
   ExamTestDetail: { testId: string };
+  MyTestScores: { examId: string, examName: string };
 };
 
 // Create the navigators
@@ -66,6 +68,11 @@ const ExamTestNavigator = () => {
         name="ExamTestDetail" 
         component={ExamTestDetailScreen} 
         options={{ title: 'Exam Test' }}
+      />
+      <ExamTestStack.Screen 
+        name="MyTestScores" 
+        component={MyTestScoresScreen} 
+        options={{ title: 'My Test Scores' }}
       />
     </ExamTestStack.Navigator>
   );

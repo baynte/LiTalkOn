@@ -96,6 +96,20 @@ export interface StudentTestScore {
   userAudioUrl?: string;    // Student's recorded audio
   created_at: string;
   student_full_name: string;
+  student_id?: string;      // Added to identify which student this belongs to
+}
+
+// Test Score Remark
+export interface TestScoreRemark {
+  id: string;
+  remark: string;
+  created_at: string;
+  teacher: {
+    id: string;
+    username: string;
+    name: string;
+  };
+  audio_url: string | null;
 }
 
 // Student ranking type

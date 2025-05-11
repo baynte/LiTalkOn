@@ -14,17 +14,18 @@ import { StudentTestScore, TestScoreRemark } from '../../types';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import AudioPlayer from '../../components/AudioPlayer';
 import TestScoreRemarkList from '../../components/TestScoreRemarkList';
-import TestScoreRemarkForm from '../../components/TestScoreRemarkForm';
+import { useAuth } from '../../contexts/AuthContext';
 
-interface StudentTestScoresScreenProps {
+interface MyTestScoresScreenProps {
   navigation: any;
   route: any;
 }
 
-const StudentTestScoresScreen: React.FC<StudentTestScoresScreenProps> = ({ navigation, route }) => {
+const MyTestScoresScreen: React.FC<MyTestScoresScreenProps> = ({ navigation, route }) => {
   const { examId, examName } = route.params;
   const theme = useTheme();
-  const { colors, spacing, borderRadius } = theme;
+  const { colors } = theme;
+  const { user } = useAuth();
 
   const [testScores, setTestScores] = useState<StudentTestScore[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -35,8 +36,6 @@ const StudentTestScoresScreen: React.FC<StudentTestScoresScreenProps> = ({ navig
   const [remarks, setRemarks] = useState<Record<string, TestScoreRemark[]>>({});
   const [isLoadingRemarks, setIsLoadingRemarks] = useState<Record<string, boolean>>({});
   const [remarksError, setRemarksError] = useState<Record<string, string | null>>({});
-  const [showRemarkForm, setShowRemarkForm] = useState(false);
-  const [selectedAttemptId, setSelectedAttemptId] = useState<string | null>(null);
 
   // Load student test scores
   const loadTestScores = async () => {
@@ -47,12 +46,12 @@ const StudentTestScoresScreen: React.FC<StudentTestScoresScreenProps> = ({ navig
       // 1 = exam type
       const data = await getStudentTestScores(1, examId);
       
-      // Filter scores for this specific exam
-      const examScores = data.filter(score => score.test_id === examId);
-      setTestScores(examScores);
+      // Filter scores for this specific exam and this student
+      const myScores = data.filter(score => score.test_id === examId && score.student_id === user?.id);
+      setTestScores(myScores);
     } catch (err: any) {
-      console.error('Error loading student test scores:', err);
-      setError(err.message || 'Failed to load student test scores');
+      console.error('Error loading my test scores:', err);
+      setError(err.message || 'Failed to load test scores');
     } finally {
       setIsLoading(false);
       setRefreshing(false);
@@ -107,19 +106,6 @@ const StudentTestScoresScreen: React.FC<StudentTestScoresScreenProps> = ({ navig
       [id]: tab
     }));
   };
-  
-  // Show remark form for a specific attempt
-  const showAddRemarkForm = (attemptId: string) => {
-    setSelectedAttemptId(attemptId);
-    setShowRemarkForm(true);
-  };
-  
-  // Handle remark added successfully
-  const handleRemarkAdded = () => {
-    if (selectedAttemptId) {
-      loadRemarks(selectedAttemptId);
-    }
-  };
 
   // Render test score item
   const renderTestScoreItem = ({ item }: { item: StudentTestScore }) => {
@@ -134,7 +120,7 @@ const StudentTestScoresScreen: React.FC<StudentTestScoresScreenProps> = ({ navig
         >
           <View style={styles.scoreInfo}>
             <Text style={[styles.scoreTitle, { color: colors.text }]}>
-              {item.student_full_name || 'Unknown Test'}
+              {item.title || 'Unknown Test'}
             </Text>
             <Text style={[styles.scoreValue, { color: getScoreColor(item.score, colors) }]}>
               {item.score}%
@@ -170,7 +156,7 @@ const StudentTestScoresScreen: React.FC<StudentTestScoresScreenProps> = ({ navig
                     { color: currentTab === 'recording' ? colors.primary : colors.textSecondary }
                   ]}
                 >
-                  Recording
+                  My Recording
                 </Text>
               </TouchableOpacity>
               
@@ -192,7 +178,7 @@ const StudentTestScoresScreen: React.FC<StudentTestScoresScreenProps> = ({ navig
                     { color: currentTab === 'remarks' ? colors.primary : colors.textSecondary }
                   ]}
                 >
-                  Remarks
+                  Teacher Remarks
                 </Text>
               </TouchableOpacity>
             </View>
@@ -200,7 +186,7 @@ const StudentTestScoresScreen: React.FC<StudentTestScoresScreenProps> = ({ navig
             {currentTab === 'recording' ? (
               <View style={styles.audioSection}>
                 <View style={styles.audioPlayer}>
-                  <Text style={[styles.audioTitle, { color: colors.warning }]}>{item.student_full_name}'s Recording:</Text>
+                  <Text style={[styles.audioTitle, { color: colors.warning }]}>Your Recording:</Text>
                   {item.userAudioUrl ? (
                     <AudioPlayer audioUrl={item.userAudioUrl} />
                   ) : (
@@ -216,8 +202,7 @@ const StudentTestScoresScreen: React.FC<StudentTestScoresScreenProps> = ({ navig
                   remarks={remarks[item.id] || []}
                   isLoading={isLoadingRemarks[item.id] || false}
                   error={remarksError[item.id] || null}
-                  onAddRemark={() => showAddRemarkForm(item.id)}
-                  isTeacher={true}
+                  isTeacher={false}
                 />
               </View>
             )}
@@ -261,7 +246,7 @@ const StudentTestScoresScreen: React.FC<StudentTestScoresScreenProps> = ({ navig
     <View style={[styles.container, { backgroundColor: colors.background }]}>
       <View style={styles.header}>
         <Text style={[styles.title, { color: colors.text }]}>
-          {examName} - Student Scores
+          {examName} - My Scores
         </Text>
       </View>
       
@@ -269,10 +254,10 @@ const StudentTestScoresScreen: React.FC<StudentTestScoresScreenProps> = ({ navig
         <View style={styles.emptyContainer}>
           <Icon name="account-voice-off" size={60} color={colors.textSecondary} />
           <Text style={[styles.emptyText, { color: colors.textSecondary }]}>
-            No student recordings available
+            No test scores available
           </Text>
           <Text style={[styles.emptySubText, { color: colors.textSecondary }]}>
-            Students have not attempted this exam yet or their recordings were not saved
+            You haven't attempted this exam yet or your recordings were not saved
           </Text>
         </View>
       ) : (
@@ -283,16 +268,6 @@ const StudentTestScoresScreen: React.FC<StudentTestScoresScreenProps> = ({ navig
           contentContainerStyle={styles.listContent}
           refreshing={refreshing}
           onRefresh={handleRefresh}
-        />
-      )}
-      
-      {/* Remark Form Modal */}
-      {showRemarkForm && selectedAttemptId && (
-        <TestScoreRemarkForm
-          attemptId={selectedAttemptId}
-          visible={showRemarkForm}
-          onClose={() => setShowRemarkForm(false)}
-          onRemarkAdded={handleRemarkAdded}
         />
       )}
     </View>
@@ -419,4 +394,4 @@ const styles = StyleSheet.create({
   },
 });
 
-export default StudentTestScoresScreen; 
+export default MyTestScoresScreen; 
