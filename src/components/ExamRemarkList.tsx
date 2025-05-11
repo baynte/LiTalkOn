@@ -15,11 +15,16 @@ import { API_BASE_URL } from '../services/api';
 
 export interface ExamRemark {
   id: string;
-  exam_test_id: string;
-  teacher_id: string;
+  exam_test_id?: string;
+  teacher_id?: string;
   remark: string;
   audioUrl: string | null;
   created_at: string;
+  teacher?: {
+    id: string;
+    username: string;
+    name: string;
+  };
 }
 
 interface ExamRemarkListProps {
@@ -195,9 +200,14 @@ const ExamRemarkList: React.FC<ExamRemarkListProps> = ({
                 </Text>
               </View>
               {remark.remark && remark.remark.trim() !== '' && (
+                <>
                 <Text style={[styles.remarkContent, { color: colors.text }]}>
                   {remark.remark}
                 </Text>
+                <Text style={[styles.remarkContent, { color: colors.text }]}>
+                  {`By: ${remark.teacher?.name}`}
+                </Text>
+                </>
               )}
               
               {isValidAudioUrl(remark.audioUrl) && (

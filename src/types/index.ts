@@ -80,6 +80,7 @@ export interface ExamTest {
   createdAt: string;
   createdBy: string;
   timeLimit?: number; // Optional time limit in minutes
+  taken?: boolean;    // Whether the student has taken this exam
 }
 
 // Student test score with audio recording

@@ -7,6 +7,7 @@ import {
   TouchableOpacity,
   ActivityIndicator,
   TextInput,
+  RefreshControl,
 } from 'react-native';
 import { useTheme } from '../../theme/ThemeProvider';
 import { fetchExamTests } from '../../services/api';
@@ -98,7 +99,14 @@ const ExamTestsScreen: React.FC<ExamTestsScreenProps> = ({ navigation }) => {
         onPress={() => navigation.navigate('ExamTestDetail', { testId: item.id })}
       >
         <View style={styles.testInfo}>
-          <Text style={[styles.testTitle, { color: colors.text }]}>{item.name}</Text>
+          <View style={styles.titleRow}>
+            <Text style={[styles.testTitle, { color: colors.text }]}>{item.name}</Text>
+            {item.taken && (
+              <View style={[styles.badge, { backgroundColor: colors.success }]}>
+                <Text style={styles.badgeText}>Taken</Text>
+              </View>
+            )}
+          </View>
           <Text style={[styles.testDescription, { color: colors.textSecondary }]} numberOfLines={2}>
             {item.description}
           </Text>
@@ -108,6 +116,11 @@ const ExamTestsScreen: React.FC<ExamTestsScreenProps> = ({ navigation }) => {
           <Text style={[styles.testMeta, { color: colors.textSecondary }]}>
             Created on {new Date(item.createdAt).toLocaleDateString()}
           </Text>
+          {item.taken && (
+            <Text style={[styles.takenText, { color: colors.success }]}>
+              You have already taken this exam
+            </Text>
+          )}
         </View>
         <Icon name="chevron-right" size={24} color={colors.textSecondary} />
       </TouchableOpacity>
@@ -141,6 +154,12 @@ const ExamTestsScreen: React.FC<ExamTestsScreenProps> = ({ navigation }) => {
     <View style={[styles.container, { backgroundColor: colors.background }]}>
       <View style={styles.header}>
         <Text style={[styles.title, { color: colors.text }]}>Exam Tests</Text>
+        <TouchableOpacity
+          style={[styles.reloadButton, { backgroundColor: colors.primary }]}
+          onPress={handleRefresh}
+        >
+          <Icon name="refresh" size={20} color="#FFFFFF" />
+        </TouchableOpacity>
       </View>
       
       {/* Search Bar */}
@@ -183,8 +202,9 @@ const ExamTestsScreen: React.FC<ExamTestsScreenProps> = ({ navigation }) => {
           renderItem={renderExamTestItem}
           keyExtractor={(item) => item.id}
           contentContainerStyle={styles.listContent}
-          refreshing={refreshing}
-          onRefresh={handleRefresh}
+          refreshControl={
+            <RefreshControl refreshing={refreshing} onRefresh={handleRefresh} />
+          }
         />
       )}
     </View>
@@ -198,10 +218,20 @@ const styles = StyleSheet.create({
   },
   header: {
     marginBottom: 16,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
   },
   title: {
     fontSize: 24,
     fontWeight: 'bold',
+  },
+  reloadButton: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   searchContainer: {
     flexDirection: 'row',
@@ -231,10 +261,25 @@ const styles = StyleSheet.create({
   testInfo: {
     flex: 1,
   },
+  titleRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 4,
+  },
   testTitle: {
     fontSize: 16,
     fontWeight: 'bold',
-    marginBottom: 4,
+    marginRight: 8,
+  },
+  badge: {
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 12,
+  },
+  badgeText: {
+    color: '#FFFFFF',
+    fontSize: 10,
+    fontWeight: 'bold',
   },
   testDescription: {
     fontSize: 14,
@@ -243,6 +288,11 @@ const styles = StyleSheet.create({
   testMeta: {
     fontSize: 12,
     marginBottom: 4,
+  },
+  takenText: {
+    fontSize: 12,
+    fontStyle: 'italic',
+    marginTop: 4,
   },
   emptyContainer: {
     flex: 1,
@@ -256,10 +306,14 @@ const styles = StyleSheet.create({
     marginTop: 16,
     textAlign: 'center',
   },
-  clearSearchText: {
-    fontSize: 16,
-    fontWeight: 'bold',
+  emptySubText: {
+    fontSize: 14,
+    textAlign: 'center',
     marginTop: 8,
+  },
+  clearSearchText: {
+    marginTop: 8,
+    fontWeight: '500',
   },
   errorText: {
     marginTop: 16,

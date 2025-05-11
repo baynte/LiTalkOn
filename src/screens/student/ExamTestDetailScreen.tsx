@@ -58,6 +58,11 @@ const ExamTestDetailScreen: React.FC<ExamTestDetailScreenProps> = ({ navigation,
         const test = await getExamTestById(testId);
         setExamTest(test);
         
+        // If the exam has been taken, show remarks tab by default
+        if (test.taken) {
+          setShowRemarkTab(true);
+        }
+        
         // Fetch all voice clips for this test
         const clips: VoiceClip[] = [];
         for (const clipId of test.voiceClipIds) {
@@ -332,6 +337,72 @@ const ExamTestDetailScreen: React.FC<ExamTestDetailScreenProps> = ({ navigation,
     );
   };
 
+  // Add this function to show a warning if the exam has been taken
+  const renderExamStartSection = () => {
+    if (!examTest) return null;
+    
+    // If exam has been taken, show a message directing to remarks
+    if (examTest.taken) {
+      return (
+        <View style={[styles.startContainer, { backgroundColor: colors.card, borderColor: colors.border }]}>
+          <View style={styles.takenContainer}>
+            <Icon name="check-circle" size={40} color={colors.success} />
+            <Text style={[styles.takenTitle, { color: colors.success }]}>
+              You have completed this exam
+            </Text>
+          </View>
+          
+          <Text style={[styles.startDescription, { color: colors.textSecondary }]}>
+            You've already taken this exam. View your results and teacher remarks below.
+          </Text>
+          
+          <TouchableOpacity
+            style={[styles.viewRemarksButton, { backgroundColor: colors.primary }]}
+            onPress={() => setShowRemarkTab(true)}
+          >
+            <Text style={[styles.viewRemarksButtonText, { color: '#FFFFFF' }]}>
+              View Teacher Remarks
+            </Text>
+          </TouchableOpacity>
+          
+          <TouchableOpacity
+            style={[styles.viewScoresButton, { backgroundColor: colors.primaryLight, marginTop: 12 }]}
+            onPress={() => navigation.navigate('MyTestScores', { examId: testId, examName: examTest.name })}
+          >
+            <Text style={[styles.viewScoresButtonText, { color: '#FFFFFF' }]}>
+              View My Test Scores
+            </Text>
+          </TouchableOpacity>
+        </View>
+      );
+    }
+    
+    // Normal start exam section for untaken exams
+    return (
+      <View style={[styles.startContainer, { backgroundColor: colors.card, borderColor: colors.border }]}>
+        <Text style={[styles.startTitle, { color: colors.text }]}>Ready to Start?</Text>
+        
+        <Text style={[styles.startDescription, { color: colors.textSecondary }]}>
+          This exam contains {voiceClips.length} voice clips that you will need to record.
+          {examTest.timeLimit ? ` You will have ${examTest.timeLimit} minutes to complete the exam.` : ''}
+        </Text>
+        
+        <Text style={[styles.startWarning, { color: colors.warning }]}>
+          Once started, you cannot pause or restart the exam.
+        </Text>
+        
+        <TouchableOpacity
+          style={[styles.startButton, { backgroundColor: colors.primary }]}
+          onPress={handleStartExam}
+        >
+          <Text style={[styles.startButtonText, { color: '#FFFFFF' }]}>
+            Start Exam
+          </Text>
+        </TouchableOpacity>
+      </View>
+    );
+  };
+
   if (isLoading) {
     return (
       <View style={[styles.container, { backgroundColor: colors.background }]}>
@@ -382,25 +453,62 @@ const ExamTestDetailScreen: React.FC<ExamTestDetailScreenProps> = ({ navigation,
             {examTest.description}
           </Text>
         </View>
+
+        {/* Tabs */}
+        <View style={[styles.tabContainer, { borderBottomColor: colors.border, borderBottomWidth: 1 }]}>
+          <TouchableOpacity
+            style={[
+              styles.tabButton,
+              !showRemarkTab && { borderBottomColor: colors.primary, borderBottomWidth: 2 }
+            ]}
+            onPress={() => setShowRemarkTab(false)}
+          >
+            <Icon name="clipboard-text-outline" size={20} color={!showRemarkTab ? colors.primary : colors.textSecondary} />
+            <Text
+              style={[
+                styles.tabText,
+                { color: !showRemarkTab ? colors.primary : colors.textSecondary }
+              ]}
+            >
+              Results
+            </Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={[
+              styles.tabButton,
+              showRemarkTab && { borderBottomColor: colors.primary, borderBottomWidth: 2 }
+            ]}
+            onPress={() => setShowRemarkTab(true)}
+          >
+            <Icon name="comment-text-outline" size={20} color={showRemarkTab ? colors.primary : colors.textSecondary} />
+            <Text
+              style={[
+                styles.tabText,
+                { color: showRemarkTab ? colors.primary : colors.textSecondary }
+              ]}
+            >
+              Teacher Remarks
+            </Text>
+          </TouchableOpacity>
+        </View>
         
-        {renderResults()}
-        
-        <TouchableOpacity
-          style={[styles.viewScoresButton, { backgroundColor: colors.primary }]}
-          onPress={() => navigation.navigate('MyTestScores', { examId: testId, examName: examTest.name })}
-        >
-          <Text style={styles.viewScoresButtonText}>View My Test Scores</Text>
-        </TouchableOpacity>
-        
-        {showRemarkTab && (
-          <View style={styles.remarksSection}>
-            <ExamRemarkList
-              remarks={remarks}
-              isLoading={isLoadingRemarks}
-              error={remarksError}
-              isTeacher={false}
-            />
-          </View>
+        {showRemarkTab ? (
+          <ExamRemarkList
+            remarks={remarks}
+            isLoading={isLoadingRemarks}
+            error={remarksError}
+            isTeacher={false}
+          />
+        ) : (
+          <>
+            {renderResults()}
+            <TouchableOpacity
+              style={[styles.viewScoresButton, { backgroundColor: colors.primary }]}
+              onPress={() => navigation.navigate('MyTestScores', { examId: testId, examName: examTest.name })}
+            >
+              <Text style={styles.viewScoresButtonText}>View My Test Scores</Text>
+            </TouchableOpacity>
+          </>
         )}
       </ScrollView>
     );
@@ -416,63 +524,49 @@ const ExamTestDetailScreen: React.FC<ExamTestDetailScreenProps> = ({ navigation,
         <Text style={[styles.description, { color: colors.textSecondary }]}>
           {examTest.description}
         </Text>
-        
-        <View style={styles.examInfo}>
-          <View style={styles.infoItem}>
-            <Icon name="microphone" size={16} color={colors.textSecondary} />
-            <Text style={[styles.infoText, { color: colors.textSecondary }]}>
-              {voiceClips.length} voice clips
-            </Text>
-          </View>
-          
-          {examTest.timeLimit && (
-            <View style={styles.infoItem}>
-              <Icon name="clock-outline" size={16} color={colors.textSecondary} />
-              <Text style={[styles.infoText, { color: colors.textSecondary }]}>
-                {examTest.timeLimit} minute{examTest.timeLimit !== 1 ? 's' : ''}
-              </Text>
-            </View>
-          )}
-        </View>
       </View>
       
-      {/* Tabs */}
-      <View style={styles.tabContainer}>
-        <TouchableOpacity
-          style={[
-            styles.tab,
-            !showRemarkTab && { backgroundColor: colors.primary },
-          ]}
-          onPress={() => setShowRemarkTab(false)}
-        >
-          <Text
+      {/* Tabs - only show if exam has been taken */}
+      {examTest.taken && (
+        <View style={[styles.tabContainer, { borderBottomColor: colors.border, borderBottomWidth: 1 }]}>
+          <TouchableOpacity
             style={[
-              styles.tabText,
-              { color: showRemarkTab ? colors.text : '#FFFFFF' },
+              styles.tabButton,
+              !showRemarkTab && { borderBottomColor: colors.primary, borderBottomWidth: 2 }
             ]}
+            onPress={() => setShowRemarkTab(false)}
           >
-            Exam
-          </Text>
-        </TouchableOpacity>
-        <TouchableOpacity
-          style={[
-            styles.tab,
-            showRemarkTab && { backgroundColor: colors.primary },
-          ]}
-          onPress={() => setShowRemarkTab(true)}
-        >
-          <Text
+            <Icon name="clipboard-text-outline" size={20} color={!showRemarkTab ? colors.primary : colors.textSecondary} />
+            <Text
+              style={[
+                styles.tabText,
+                { color: !showRemarkTab ? colors.primary : colors.textSecondary }
+              ]}
+            >
+              Exam Info
+            </Text>
+          </TouchableOpacity>
+          <TouchableOpacity
             style={[
-              styles.tabText,
-              { color: !showRemarkTab ? colors.text : '#FFFFFF' },
+              styles.tabButton,
+              showRemarkTab && { borderBottomColor: colors.primary, borderBottomWidth: 2 }
             ]}
+            onPress={() => setShowRemarkTab(true)}
           >
-            Teacher Remarks
-          </Text>
-        </TouchableOpacity>
-      </View>
+            <Icon name="comment-text-outline" size={20} color={showRemarkTab ? colors.primary : colors.textSecondary} />
+            <Text
+              style={[
+                styles.tabText,
+                { color: showRemarkTab ? colors.primary : colors.textSecondary }
+              ]}
+            >
+              Teacher Remarks
+            </Text>
+          </TouchableOpacity>
+        </View>
+      )}
 
-      {showRemarkTab ? (
+      {examTest.taken && showRemarkTab ? (
         <ExamRemarkList
           remarks={remarks}
           isLoading={isLoadingRemarks}
@@ -481,23 +575,7 @@ const ExamTestDetailScreen: React.FC<ExamTestDetailScreenProps> = ({ navigation,
         />
       ) : (
         !isExamStarted && !isExamCompleted ? (
-          <View style={[styles.startContainer, { backgroundColor: colors.card, borderColor: colors.border }]}>
-            <Text style={[styles.startTitle, { color: colors.text }]}>Ready to Start?</Text>
-            <Text style={[styles.startDescription, { color: colors.textSecondary }]}>
-              This exam contains {voiceClips.length} voice clips that you will need to record.
-              {examTest.timeLimit ? ` You will have ${examTest.timeLimit} minutes to complete the exam.` : ''}
-            </Text>
-            <Text style={[styles.startWarning, { color: colors.warning }]}>
-              Once started, you cannot pause or restart the exam.
-            </Text>
-            
-            <TouchableOpacity
-              style={[styles.startButton, { backgroundColor: colors.primary }]}
-              onPress={handleStartExam}
-            >
-              <Text style={[styles.startButtonText, { color: '#FFFFFF' }]}>Start Exam</Text>
-            </TouchableOpacity>
-          </View>
+          renderExamStartSection()
         ) : isExamStarted && !isExamCompleted ? (
           renderCurrentClip()
         ) : (
@@ -511,26 +589,26 @@ const ExamTestDetailScreen: React.FC<ExamTestDetailScreenProps> = ({ navigation,
         transparent={true}
         animationType="fade"
       >
-        <View style={styles.modalOverlay}>
-          <View style={[styles.modalContent, { backgroundColor: colors.card, borderColor: colors.border }]}>
-            <Text style={[styles.modalTitle, { color: colors.text }]}>Start Exam?</Text>
-            <Text style={[styles.modalDescription, { color: colors.textSecondary }]}>
+        <View style={[styles.modalOverlay]}>
+          <View style={[styles.modalContainer, { backgroundColor: colors.card }]}>
+            <Text style={[styles.modalTitle, { color: colors.text }]}>
+              Start Exam
+            </Text>
+            <Text style={[styles.modalText, { color: colors.textSecondary }]}>
               Are you sure you want to start the exam? Once started, you cannot pause or restart.
             </Text>
-            
             <View style={styles.modalButtons}>
               <TouchableOpacity
-                style={[styles.modalButton, styles.cancelButton, { borderColor: colors.border }]}
+                style={[styles.modalButton, { backgroundColor: colors.card, borderColor: colors.border }]}
                 onPress={() => setShowConfirmModal(false)}
               >
-                <Text style={[styles.cancelButtonText, { color: colors.text }]}>Cancel</Text>
+                <Text style={[styles.modalButtonText, { color: colors.text }]}>Cancel</Text>
               </TouchableOpacity>
-              
               <TouchableOpacity
-                style={[styles.modalButton, styles.confirmButton, { backgroundColor: colors.primary }]}
+                style={[styles.modalButton, { backgroundColor: colors.primary }]}
                 onPress={confirmStartExam}
               >
-                <Text style={[styles.confirmButtonText, { color: '#FFFFFF' }]}>Start</Text>
+                <Text style={[styles.modalButtonText, { color: '#FFFFFF' }]}>Start</Text>
               </TouchableOpacity>
             </View>
           </View>
@@ -544,17 +622,19 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
   },
+  scrollContent: {
+    flexGrow: 1,
+  },
   contentContainer: {
+    flex: 1,
     padding: 16,
-    paddingBottom: 32,
   },
   header: {
-    marginBottom: 24,
+    marginBottom: 16,
   },
   title: {
     fontSize: 24,
     fontWeight: 'bold',
-    marginBottom: 8,
   },
   description: {
     fontSize: 16,
@@ -575,48 +655,60 @@ const styles = StyleSheet.create({
     marginLeft: 4,
   },
   startContainer: {
-    padding: 16,
+    padding: 24,
     borderRadius: 8,
     borderWidth: 1,
-    marginBottom: 24,
-    alignItems: 'center',
+    marginBottom: 16,
   },
   startTitle: {
-    fontSize: 20,
+    fontSize: 24,
     fontWeight: 'bold',
     marginBottom: 16,
-    textAlign: 'center',
   },
   startDescription: {
     fontSize: 16,
     marginBottom: 16,
-    textAlign: 'center',
   },
   startWarning: {
     fontSize: 14,
-    fontWeight: 'bold',
+    fontWeight: '500',
     marginBottom: 24,
-    textAlign: 'center',
   },
   startButton: {
     paddingVertical: 12,
-    paddingHorizontal: 24,
     borderRadius: 8,
+    alignItems: 'center',
+    borderWidth: 1,
   },
   startButtonText: {
     fontSize: 16,
     fontWeight: 'bold',
   },
+  takenContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 16,
+  },
+  takenTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    marginLeft: 12,
+  },
+  takenWarningText: {
+    fontSize: 14,
+    marginLeft: 8,
+    flex: 1,
+  },
   currentClipContainer: {
     padding: 16,
     borderRadius: 8,
     borderWidth: 1,
-    marginBottom: 24,
+    marginBottom: 16,
   },
   clipHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    marginBottom: 16,
+    marginBottom: 8,
   },
   clipCounter: {
     fontSize: 14,
@@ -641,10 +733,9 @@ const styles = StyleSheet.create({
     marginBottom: 24,
   },
   resultsTitle: {
-    fontSize: 20,
+    fontSize: 24,
     fontWeight: 'bold',
     marginBottom: 16,
-    textAlign: 'center',
   },
   overallScoreContainer: {
     flexDirection: 'row',
@@ -704,21 +795,19 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(0, 0, 0, 0.5)',
     justifyContent: 'center',
     alignItems: 'center',
-    padding: 16,
   },
-  modalContent: {
-    width: '100%',
+  modalContainer: {
+    width: '80%',
     padding: 24,
     borderRadius: 8,
-    borderWidth: 1,
   },
   modalTitle: {
-    fontSize: 20,
+    fontSize: 18,
     fontWeight: 'bold',
     marginBottom: 16,
     textAlign: 'center',
   },
-  modalDescription: {
+  modalText: {
     fontSize: 16,
     marginBottom: 24,
     textAlign: 'center',
@@ -728,25 +817,14 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
   },
   modalButton: {
-    flex: 1,
-    height: 48,
+    paddingVertical: 10,
+    paddingHorizontal: 16,
     borderRadius: 8,
-    justifyContent: 'center',
+    minWidth: 100,
     alignItems: 'center',
   },
-  cancelButton: {
-    borderWidth: 1,
-    marginRight: 8,
-  },
-  cancelButtonText: {
-    fontSize: 16,
-    fontWeight: 'bold',
-  },
-  confirmButton: {
-    marginLeft: 8,
-  },
-  confirmButtonText: {
-    fontSize: 16,
+  modalButtonText: {
+    fontSize: 14,
     fontWeight: 'bold',
   },
   errorText: {
@@ -767,17 +845,19 @@ const styles = StyleSheet.create({
   tabContainer: {
     flexDirection: 'row',
     marginBottom: 16,
-    padding: 8,
+    paddingBottom: 8,
   },
-  tab: {
-    flex: 1,
-    padding: 12,
+  tabButton: {
+    flexDirection: 'row',
     alignItems: 'center',
-    borderRadius: 8,
-    marginHorizontal: 4,
+    paddingVertical: 8,
+    paddingHorizontal: 16,
+    marginRight: 16,
   },
   tabText: {
-    fontWeight: 'bold',
+    marginLeft: 8,
+    fontWeight: '500',
+    fontSize: 14,
   },
   viewScoresButton: {
     backgroundColor: '#4CAF50',
@@ -793,10 +873,17 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
   },
   remarksSection: {
-    padding: 16,
+    marginTop: 8,
+  },
+  viewRemarksButton: {
+    paddingVertical: 12,
     borderRadius: 8,
-    borderWidth: 1,
-    marginBottom: 24,
+    alignItems: 'center',
+    marginTop: 16,
+  },
+  viewRemarksButtonText: {
+    fontSize: 16,
+    fontWeight: 'bold',
   },
 });
 
